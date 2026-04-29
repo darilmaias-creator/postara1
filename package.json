@@ -1,0 +1,8 @@
+{
+  "name": "postara-preview",
+  "private": true,
+  "scripts": {
+    "build": "node ./scripts/build-preview.mjs"
+  }
+}
+
