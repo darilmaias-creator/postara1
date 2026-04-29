@@ -304,8 +304,8 @@
 
                                 <button class="button button-danger" id="logout-button" type="button">Sair</button>
                                 <p class="hint">
-                                    O botão de assinatura usa a rota dev-only que criamos para validar os fluxos
-                                    `free` e `premium`.
+                                    O botão de assinatura atualiza o plano salvo no Supabase para validar os fluxos
+                                    `free` e `premium` durante os testes.
                                 </p>
                             </div>
                         </section>
@@ -340,6 +340,7 @@
     </div>
 
     <div class="toast" id="toast" hidden></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./runtime-config.js"></script>
     <script type="module" src="./app.js"></script>
 </body>

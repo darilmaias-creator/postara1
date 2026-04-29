@@ -1,12 +1,16 @@
 const STORAGE_KEYS = {
-    token: 'postara.auth.token',
     sessionId: 'postara.session.id'
 };
 
 const runtimeConfig = window.POSTARA_CONFIG || {};
 const API_BASE_URL = String(runtimeConfig.apiBaseUrl || '').replace(/\/$/, '');
-const IS_STATIC_PREVIEW_WITHOUT_API =
-    window.location.hostname.endsWith('vercel.app') && !API_BASE_URL;
+const SUPABASE_URL = String(runtimeConfig.supabaseUrl || '').replace(/\/$/, '');
+const SUPABASE_PUBLISHABLE_KEY = String(runtimeConfig.supabasePublishableKey || '').trim();
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+const supabaseClient =
+    hasSupabaseConfig && window.supabase?.createClient
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+        : null;
 
 const VIEW_CONFIG = {
     dashboard: {
@@ -28,7 +32,6 @@ const VIEW_CONFIG = {
 };
 
 const state = {
-    token: localStorage.getItem(STORAGE_KEYS.token),
     sessionId: localStorage.getItem(STORAGE_KEYS.sessionId) || crypto.randomUUID(),
     user: null,
     currentAuthTab: 'login',
@@ -45,6 +48,7 @@ const state = {
 };
 
 localStorage.setItem(STORAGE_KEYS.sessionId, state.sessionId);
+localStorage.removeItem('postara.auth.token');
 
 // Centralizamos os seletores para deixar a manutenção da SPA simples conforme o layout evolui.
 const elements = {
@@ -90,7 +94,7 @@ const elements = {
 };
 
 const escapeHtml = (value = '') =>
-    value
+    String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
@@ -114,32 +118,83 @@ const setToast = (message, type = 'success') => {
     }, 3500);
 };
 
-const renderDeploymentNotice = () => {
-    if (API_BASE_URL) {
-        elements.deploymentNotice.hidden = false;
-        elements.deploymentNotice.textContent = `Frontend conectado à API externa em ${API_BASE_URL}.`;
-        return;
+const getErrorMessage = (error, fallbackMessage = 'Não foi possível concluir a ação.') => {
+    if (error instanceof Error && error.message) {
+        return error.message;
     }
 
-    if (IS_STATIC_PREVIEW_WITHOUT_API) {
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        return error.message;
+    }
+
+    return fallbackMessage;
+};
+
+const ensureSupabaseClient = () => {
+    if (supabaseClient) {
+        return supabaseClient;
+    }
+
+    throw new Error('Supabase ainda não foi configurado no frontend.');
+};
+
+const mapProfileToUser = (profile, authUser) => ({
+    id: profile?.id || authUser.id,
+    name: profile?.name || authUser.user_metadata?.name || undefined,
+    email: profile?.email || authUser.email || '',
+    subscriptionPlan: profile?.subscription_plan || 'free',
+    createdAt: profile?.created_at || authUser.created_at || new Date().toISOString(),
+    updatedAt: profile?.updated_at || profile?.created_at || new Date().toISOString()
+});
+
+const mapHistoryRow = (row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    request: row.request_json,
+    response: row.response_json
+});
+
+const renderDeploymentNotice = () => {
+    if (!hasSupabaseConfig) {
         elements.deploymentNotice.hidden = false;
         elements.deploymentNotice.textContent =
-            'Este preview da Vercel está publicando só o visual do app. Para testar login, geração e histórico, precisamos publicar a API e conectar a URL dela aqui.';
+            'Supabase ainda não foi configurado no frontend. Sem isso, login e histórico não funcionam.';
         return;
     }
 
-    elements.deploymentNotice.hidden = true;
+    if (API_BASE_URL) {
+        elements.deploymentNotice.hidden = false;
+        elements.deploymentNotice.textContent =
+            `Auth e histórico estão no Supabase. A geração está conectada à API em ${API_BASE_URL}.`;
+        return;
+    }
+
+    elements.deploymentNotice.hidden = false;
+    elements.deploymentNotice.textContent =
+        'Auth e histórico já estão conectados ao Supabase. O próximo passo é publicar a geração de conteúdo.';
 };
 
 const apiRequest = async (path, options = {}) => {
+    if (!API_BASE_URL) {
+        throw new Error(
+            'A geração ainda não está conectada a uma API publicada. Auth e histórico já estão funcionando via Supabase.'
+        );
+    }
+
     const requestUrl = `${API_BASE_URL}${path}`;
     const headers = {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {})
     };
 
-    if (state.token) {
-        headers.Authorization = `Bearer ${state.token}`;
+    if (supabaseClient) {
+        const {
+            data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        if (session?.access_token) {
+            headers.Authorization = `Bearer ${session.access_token}`;
+        }
     }
 
     const response = await fetch(requestUrl, {
@@ -154,15 +209,11 @@ const apiRequest = async (path, options = {}) => {
         : null;
 
     if (!response.ok) {
-        let message = payload?.error?.message || 'A requisição falhou.';
-
-        if (IS_STATIC_PREVIEW_WITHOUT_API && !API_BASE_URL) {
-            message =
-                'Este preview da Vercel ainda não tem backend conectado. O visual está pronto, mas login, geração e histórico precisam de uma API publicada.';
-        } else if (!contentType.includes('application/json')) {
-            message =
-                'A resposta da API não veio no formato esperado. Pode ser uma rota inexistente ou um backend não conectado.';
-        }
+        const message =
+            payload?.error?.message ||
+            (contentType.includes('application/json')
+                ? 'A requisição falhou.'
+                : 'A resposta da API não veio no formato esperado.');
 
         const error = new Error(message);
         error.payload = payload;
@@ -342,8 +393,8 @@ const renderAuthView = () => {
         ? `Plano ${state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'}`
         : 'Plano Free';
     elements.sessionBadge.textContent = isAuthenticated
-        ? 'Sessão autenticada ativa'
-        : 'Sessão anônima ativa';
+        ? 'Sessão autenticada via Supabase'
+        : 'Sessão local ativa';
 
     if (!isAuthenticated) {
         const showingLogin = state.currentAuthTab === 'login';
@@ -417,16 +468,6 @@ const syncHistoryLimit = () => {
     elements.historyLimitSelect.value = String(state.history.limit);
 };
 
-const persistToken = (token) => {
-    state.token = token;
-
-    if (token) {
-        localStorage.setItem(STORAGE_KEYS.token, token);
-    } else {
-        localStorage.removeItem(STORAGE_KEYS.token);
-    }
-};
-
 const updateAuthenticatedState = (user) => {
     state.user = user;
     renderAuthView();
@@ -444,19 +485,46 @@ const resetHistoryState = () => {
     renderHistory();
 };
 
+const fetchCurrentUserProfile = async () => {
+    const client = ensureSupabaseClient();
+    const {
+        data: { session },
+        error: sessionError
+    } = await client.auth.getSession();
+
+    if (sessionError) {
+        throw sessionError;
+    }
+
+    if (!session?.user) {
+        return null;
+    }
+
+    const { data: profile, error: profileError } = await client
+        .from('profiles')
+        .select('id, name, email, subscription_plan, created_at, updated_at')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+    if (profileError) {
+        throw profileError;
+    }
+
+    return mapProfileToUser(profile, session.user);
+};
+
 const loadCurrentUser = async () => {
-    if (!state.token) {
+    if (!supabaseClient) {
         updateAuthenticatedState(null);
         return;
     }
 
     try {
-        const payload = await apiRequest('/api/auth/me');
-        updateAuthenticatedState(payload.data);
+        const user = await fetchCurrentUserProfile();
+        updateAuthenticatedState(user);
     } catch (error) {
-        persistToken(null);
         updateAuthenticatedState(null);
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível carregar o perfil atual.'), 'error');
     }
 };
 
@@ -466,21 +534,26 @@ const loadHistoryPage = async (page = 1) => {
         return;
     }
 
-    const payload = await apiRequest(`/api/ai/history?page=${page}&limit=${state.history.limit}`);
-    state.history.entries = payload.data;
-    state.history.total = payload.meta.total;
-    state.history.page = payload.meta.page;
-    state.history.limit = payload.meta.limit;
-    state.history.hasNextPage = payload.meta.hasNextPage;
-    renderHistory();
-};
+    const client = ensureSupabaseClient();
+    const from = (page - 1) * state.history.limit;
+    const to = from + state.history.limit - 1;
 
-const handleAuthSuccess = async (payload, successMessage) => {
-    persistToken(payload.data.token);
-    updateAuthenticatedState(payload.data.user);
-    await loadHistoryPage(1);
-    setCurrentView('generate');
-    setToast(successMessage);
+    const { data, count, error } = await client
+        .from('generation_history')
+        .select('id, created_at, request_json, response_json', { count: 'exact' })
+        .eq('user_id', state.user.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+    if (error) {
+        throw error;
+    }
+
+    state.history.entries = (data || []).map((row) => mapHistoryRow(row));
+    state.history.total = count || 0;
+    state.history.page = page;
+    state.history.hasNextPage = to + 1 < state.history.total;
+    renderHistory();
 };
 
 const handleLoginSubmit = async (event) => {
@@ -488,18 +561,25 @@ const handleLoginSubmit = async (event) => {
     const formData = new FormData(event.currentTarget);
 
     try {
+        const client = ensureSupabaseClient();
         setLoading(event.currentTarget.querySelector('button[type="submit"]'), true, 'Entrando...');
-        const payload = await apiRequest('/api/auth/login', {
-            method: 'POST',
-            body: {
-                email: formData.get('email'),
-                password: formData.get('password')
-            }
+
+        const { error } = await client.auth.signInWithPassword({
+            email: String(formData.get('email') || ''),
+            password: String(formData.get('password') || '')
         });
-        await handleAuthSuccess(payload, 'Login realizado com sucesso.');
+
+        if (error) {
+            throw error;
+        }
+
+        await loadCurrentUser();
+        await loadHistoryPage(1);
+        setCurrentView('generate');
         event.currentTarget.reset();
+        setToast('Login realizado com sucesso.');
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível entrar agora.'), 'error');
     } finally {
         setLoading(event.currentTarget.querySelector('button[type="submit"]'), false);
     }
@@ -510,19 +590,39 @@ const handleRegisterSubmit = async (event) => {
     const formData = new FormData(event.currentTarget);
 
     try {
+        const client = ensureSupabaseClient();
         setLoading(event.currentTarget.querySelector('button[type="submit"]'), true, 'Criando...');
-        const payload = await apiRequest('/api/auth/register', {
-            method: 'POST',
-            body: {
-                name: formData.get('name'),
-                email: formData.get('email'),
-                password: formData.get('password')
+
+        const name = String(formData.get('name') || '').trim();
+        const { data, error } = await client.auth.signUp({
+            email: String(formData.get('email') || ''),
+            password: String(formData.get('password') || ''),
+            options: {
+                emailRedirectTo: window.location.origin,
+                data: {
+                    name
+                }
             }
         });
-        await handleAuthSuccess(payload, 'Conta criada com sucesso.');
+
+        if (error) {
+            throw error;
+        }
+
         event.currentTarget.reset();
+
+        if (data.session?.user) {
+            await loadCurrentUser();
+            await loadHistoryPage(1);
+            setCurrentView('generate');
+            setToast('Conta criada com sucesso.');
+            return;
+        }
+
+        setCurrentView('account');
+        setToast('Conta criada. Agora confirme seu e-mail para liberar o login.');
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível criar a conta agora.'), 'error');
     } finally {
         setLoading(event.currentTarget.querySelector('button[type="submit"]'), false);
     }
@@ -530,15 +630,22 @@ const handleRegisterSubmit = async (event) => {
 
 const handleLogout = async () => {
     try {
+        const client = ensureSupabaseClient();
         setLoading(elements.logoutButton, true, 'Saindo...');
-        await apiRequest('/api/auth/logout', { method: 'POST' });
-        persistToken(null);
+
+        const { error } = await client.auth.signOut();
+
+        if (error) {
+            throw error;
+        }
+
         updateAuthenticatedState(null);
         resetHistoryState();
+        renderResult(null);
         setCurrentView('dashboard');
         setToast('Sessão encerrada.');
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível sair agora.'), 'error');
     } finally {
         setLoading(elements.logoutButton, false);
     }
@@ -552,17 +659,35 @@ const handleSubscriptionToggle = async () => {
     const nextPlan = state.user.subscriptionPlan === 'premium' ? 'free' : 'premium';
 
     try {
+        const client = ensureSupabaseClient();
         setLoading(elements.subscriptionToggleButton, true, 'Atualizando...');
-        const payload = await apiRequest('/api/auth/me/subscription', {
-            method: 'PATCH',
-            body: {
-                subscriptionPlan: nextPlan
-            }
-        });
-        updateAuthenticatedState(payload.data);
-        setToast(`Assinatura alterada para ${payload.data.subscriptionPlan}.`);
+
+        const { data, error } = await client
+            .from('profiles')
+            .update({
+                subscription_plan: nextPlan
+            })
+            .eq('id', state.user.id)
+            .select('id, name, email, subscription_plan, created_at, updated_at')
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        updateAuthenticatedState(
+            mapProfileToUser(data, {
+                id: data.id,
+                email: data.email,
+                created_at: data.created_at,
+                user_metadata: {
+                    name: data.name
+                }
+            })
+        );
+        setToast(`Assinatura alterada para ${data.subscription_plan}.`);
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível atualizar a assinatura.'), 'error');
     } finally {
         setLoading(elements.subscriptionToggleButton, false);
     }
@@ -575,10 +700,59 @@ const handleRefreshProfile = async () => {
         await loadHistoryPage(state.history.page);
         setToast('Perfil atualizado.');
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível atualizar o perfil.'), 'error');
     } finally {
         setLoading(elements.refreshProfileButton, false);
     }
+};
+
+const saveGenerationToHistory = async (formData, result) => {
+    if (!state.user) {
+        return null;
+    }
+
+    const client = ensureSupabaseClient();
+    const requestSnapshot = {
+        productName: String(formData.get('productName') || ''),
+        productFeatures: String(formData.get('productFeatures') || '') || undefined,
+        targetAudience: String(formData.get('targetAudience') || '') || undefined,
+        tone: String(formData.get('tone') || '') || undefined,
+        userId: state.user.id,
+        sessionId: state.sessionId,
+        subscriptionPlan: result.subscriptionPlan,
+        requestedGenerationMode: elements.generationModeSelect.value || undefined,
+        appliedGenerationMode: result.generationMode,
+        modeAdjusted: result.modeAdjusted
+    };
+
+    const { data, error } = await client
+        .from('generation_history')
+        .insert({
+            user_id: state.user.id,
+            session_id: state.sessionId,
+            subscription_plan: result.subscriptionPlan,
+            requested_generation_mode: elements.generationModeSelect.value || null,
+            applied_generation_mode: result.generationMode,
+            mode_adjusted: result.modeAdjusted,
+            product_name: requestSnapshot.productName,
+            product_features: requestSnapshot.productFeatures ?? null,
+            target_audience: requestSnapshot.targetAudience ?? null,
+            tone: requestSnapshot.tone ?? null,
+            response_source: result.source,
+            response_provider: result.provider,
+            response_model: result.model,
+            fallback_used: result.fallbackUsed,
+            request_json: requestSnapshot,
+            response_json: result
+        })
+        .select('id, created_at, request_json, response_json')
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    return mapHistoryRow(data);
 };
 
 const handleGenerateSubmit = async (event) => {
@@ -599,16 +773,18 @@ const handleGenerateSubmit = async (event) => {
             }
         });
 
-        setCurrentView('generate');
-        renderResult(payload.data, payload.meta);
+        let historyEntry = null;
 
         if (state.user) {
+            historyEntry = await saveGenerationToHistory(formData, payload.data);
             await loadHistoryPage(1);
         }
 
+        setCurrentView('generate');
+        renderResult(payload.data, historyEntry ? { historyId: historyEntry.id, createdAt: historyEntry.createdAt } : null);
         setToast(`Conteúdo gerado via ${payload.data.source}.`);
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível gerar o conteúdo.'), 'error');
     } finally {
         setLoading(elements.generateButton, false);
     }
@@ -616,16 +792,49 @@ const handleGenerateSubmit = async (event) => {
 
 const openHistoryEntry = async (historyId) => {
     try {
-        const payload = await apiRequest(`/api/ai/history/${historyId}`);
+        const client = ensureSupabaseClient();
+        const { data, error } = await client
+            .from('generation_history')
+            .select('id, created_at, request_json, response_json')
+            .eq('id', historyId)
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        const entry = mapHistoryRow(data);
         setCurrentView('history');
-        renderResult(payload.data.response, {
-            historyId: payload.data.id,
-            createdAt: payload.data.createdAt
+        renderResult(entry.response, {
+            historyId: entry.id,
+            createdAt: entry.createdAt
         });
         setToast('Histórico reaberto com sucesso.');
     } catch (error) {
-        setToast(error.message, 'error');
+        setToast(getErrorMessage(error, 'Não foi possível reabrir esse item.'), 'error');
     }
+};
+
+const registerAuthListener = () => {
+    if (!supabaseClient) {
+        return;
+    }
+
+    supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'INITIAL_SESSION') {
+            return;
+        }
+
+        window.setTimeout(async () => {
+            await loadCurrentUser();
+
+            if (state.user) {
+                await loadHistoryPage(1);
+            } else {
+                resetHistoryState();
+            }
+        }, 0);
+    });
 };
 
 const wireEvents = () => {
@@ -667,7 +876,7 @@ const wireEvents = () => {
             await loadHistoryPage(state.history.page);
             setToast('Histórico atualizado.');
         } catch (error) {
-            setToast(error.message, 'error');
+            setToast(getErrorMessage(error, 'Não foi possível atualizar o histórico.'), 'error');
         } finally {
             setLoading(elements.refreshHistoryButton, false);
         }
@@ -698,6 +907,7 @@ const bootstrap = async () => {
     renderResult(null);
     renderHistory();
     wireEvents();
+    registerAuthListener();
     await loadCurrentUser();
 
     if (state.user) {
