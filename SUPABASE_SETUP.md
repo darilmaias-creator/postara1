@@ -54,3 +54,26 @@ Quando isso estiver pronto, o próximo passo no código é:
 1. trocar a autenticação local por `Supabase Auth`
 2. trocar o histórico local por `public.generation_history`
 3. mover a geração para uma rota compatível com Vercel ou Supabase Functions
+
+## 7. Login com Google
+
+Se você quiser liberar login social com Google:
+
+- Vá em `Authentication` → `Sign In / Providers`
+- Abra o provedor `Google`
+- Ative o provedor
+
+Depois você vai precisar configurar credenciais do Google Cloud:
+
+- `Client ID`
+- `Client Secret`
+
+O callback URL esperado pelo Supabase segue este formato:
+
+- `https://SEU-PROJETO.supabase.co/auth/v1/callback`
+
+No seu caso:
+
+- `https://knktwfccotaudwhxpyma.supabase.co/auth/v1/callback`
+
+O frontend já está preparado para chamar `signInWithOAuth` com Google.

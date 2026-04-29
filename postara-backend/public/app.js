@@ -9,7 +9,12 @@ const SUPABASE_PUBLISHABLE_KEY = String(runtimeConfig.supabasePublishableKey || 
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 const supabaseClient =
     hasSupabaseConfig && window.supabase?.createClient
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+              auth: {
+                  flowType: 'pkce',
+                  detectSessionInUrl: true
+              }
+          })
         : null;
 
 const VIEW_CONFIG = {
@@ -72,6 +77,9 @@ const elements = {
     showRegisterTab: document.getElementById('show-register-tab'),
     loginForm: document.getElementById('login-form'),
     registerForm: document.getElementById('register-form'),
+    googleLoginButton: document.getElementById('google-login-button'),
+    googleRegisterButton: document.getElementById('google-register-button'),
+    googleRegisterDivider: document.getElementById('google-register-divider'),
     memberName: document.getElementById('member-name'),
     memberEmail: document.getElementById('member-email'),
     memberPlanBadge: document.getElementById('member-plan-badge'),
@@ -402,6 +410,9 @@ const renderAuthView = () => {
         elements.showRegisterTab.classList.toggle('is-active', !showingLogin);
         elements.loginForm.hidden = !showingLogin;
         elements.registerForm.hidden = showingLogin;
+        elements.googleLoginButton.hidden = !showingLogin;
+        elements.googleRegisterButton.hidden = showingLogin;
+        elements.googleRegisterDivider.hidden = showingLogin;
         applyPlanToModeSelector();
         renderDashboard();
         return;
@@ -625,6 +636,30 @@ const handleRegisterSubmit = async (event) => {
         setToast(getErrorMessage(error, 'Não foi possível criar a conta agora.'), 'error');
     } finally {
         setLoading(event.currentTarget.querySelector('button[type="submit"]'), false);
+    }
+};
+
+const handleGoogleAuth = async () => {
+    try {
+        const client = ensureSupabaseClient();
+
+        setLoading(elements.googleLoginButton, true, 'Redirecionando...');
+        setLoading(elements.googleRegisterButton, true, 'Redirecionando...');
+
+        const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+
+        if (error) {
+            throw error;
+        }
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível iniciar o login com Google.'), 'error');
+        setLoading(elements.googleLoginButton, false);
+        setLoading(elements.googleRegisterButton, false);
     }
 };
 
@@ -862,6 +897,8 @@ const wireEvents = () => {
 
     elements.loginForm.addEventListener('submit', handleLoginSubmit);
     elements.registerForm.addEventListener('submit', handleRegisterSubmit);
+    elements.googleLoginButton.addEventListener('click', handleGoogleAuth);
+    elements.googleRegisterButton.addEventListener('click', handleGoogleAuth);
     elements.logoutButton.addEventListener('click', handleLogout);
     elements.subscriptionToggleButton.addEventListener('click', handleSubscriptionToggle);
     elements.refreshProfileButton.addEventListener('click', handleRefreshProfile);
