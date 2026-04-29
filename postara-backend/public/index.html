@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postara</title>
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+    <div class="shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">Postara</p>
+                <h1>Seu painel para autenticação, geração e histórico</h1>
+                <p class="hero-copy">
+                    Uma SPA simples, servida pelo backend, pronta para validar fluxo de produto antes
+                    do frontend definitivo.
+                </p>
+            </div>
+            <div class="hero-status">
+                <span class="badge" id="plan-badge">Plano Free</span>
+                <span class="badge badge-muted" id="session-badge">Sessão local ativa</span>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="panel auth-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Conta</p>
+                        <h2>Autenticação</h2>
+                    </div>
+                </div>
+
+                <div id="guest-auth-view">
+                    <div class="tabs">
+                        <button class="tab is-active" id="show-login-tab" type="button">Entrar</button>
+                        <button class="tab" id="show-register-tab" type="button">Criar conta</button>
+                    </div>
+
+                    <form class="stack" id="login-form">
+                        <label class="field">
+                            <span>E-mail</span>
+                            <input type="email" name="email" placeholder="voce@email.com" required />
+                        </label>
+                        <label class="field">
+                            <span>Senha</span>
+                            <input type="password" name="password" placeholder="********" required />
+                        </label>
+                        <button class="button button-primary" type="submit">Entrar</button>
+                    </form>
+
+                    <form class="stack" id="register-form" hidden>
+                        <label class="field">
+                            <span>Nome</span>
+                            <input type="text" name="name" placeholder="Seu nome" />
+                        </label>
+                        <label class="field">
+                            <span>E-mail</span>
+                            <input type="email" name="email" placeholder="voce@email.com" required />
+                        </label>
+                        <label class="field">
+                            <span>Senha</span>
+                            <input type="password" name="password" placeholder="Mínimo de 8 caracteres" required />
+                        </label>
+                        <button class="button button-primary" type="submit">Criar conta</button>
+                    </form>
+                </div>
+
+                <div class="stack" id="member-auth-view" hidden>
+                    <div class="member-card">
+                        <p class="member-name" id="member-name">Usuário</p>
+                        <p class="member-email" id="member-email">email@email.com</p>
+                        <div class="member-meta">
+                            <span class="badge" id="member-plan-badge">Free</span>
+                            <span class="badge badge-muted" id="member-id-badge">ID</span>
+                        </div>
+                    </div>
+
+                    <div class="stack-inline">
+                        <button class="button" id="subscription-toggle-button" type="button">
+                            Alterar assinatura
+                        </button>
+                        <button class="button button-ghost" id="refresh-profile-button" type="button">
+                            Atualizar perfil
+                        </button>
+                    </div>
+
+                    <button class="button button-danger" id="logout-button" type="button">Sair</button>
+                    <p class="hint">
+                        O botão de assinatura usa a rota dev-only que criamos para validar os fluxos
+                        `free` e `premium`.
+                    </p>
+                </div>
+            </section>
+
+            <section class="panel generator-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Core</p>
+                        <h2>Gerar conteúdo</h2>
+                    </div>
+                </div>
+
+                <form class="stack" id="generator-form">
+                    <label class="field">
+                        <span>Nome do produto</span>
+                        <input type="text" name="productName" placeholder="Ex.: Cafeteira Elétrica" required />
+                    </label>
+
+                    <label class="field">
+                        <span>Características</span>
+                        <textarea name="productFeatures" rows="4" placeholder="Ex.: 15 xícaras, timer programável"></textarea>
+                    </label>
+
+                    <label class="field">
+                        <span>Público-alvo</span>
+                        <input type="text" name="targetAudience" placeholder="Ex.: quem busca praticidade" />
+                    </label>
+
+                    <label class="field">
+                        <span>Tom</span>
+                        <input type="text" name="tone" placeholder="Ex.: alegre, sofisticado, direto" />
+                    </label>
+
+                    <label class="field">
+                        <span>Modo de geração</span>
+                        <select name="generationMode" id="generation-mode-select">
+                            <option value="short">Short</option>
+                            <option value="medium">Medium</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </label>
+
+                    <p class="hint" id="generation-mode-hint">
+                        Usuários free geram em modo short. Premium libera short, medium e premium.
+                    </p>
+
+                    <button class="button button-primary" id="generate-button" type="submit">
+                        Gerar post
+                    </button>
+                </form>
+            </section>
+
+            <section class="panel result-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Output</p>
+                        <h2>Resultado</h2>
+                    </div>
+                </div>
+
+                <div class="empty-state" id="result-empty-state">
+                    Gere um post para visualizar título, legenda, CTA, hashtags e metadados.
+                </div>
+
+                <article class="result-view" id="result-view" hidden>
+                    <div class="result-meta" id="result-meta"></div>
+                    <h3 id="result-title"></h3>
+                    <div class="result-block">
+                        <h4>Legenda</h4>
+                        <p id="result-caption"></p>
+                    </div>
+                    <div class="result-block">
+                        <h4>CTA</h4>
+                        <p id="result-cta"></p>
+                    </div>
+                    <div class="result-block">
+                        <h4>Hashtags</h4>
+                        <div class="tag-list" id="result-hashtags"></div>
+                    </div>
+                    <div class="result-block">
+                        <h4>Descrição completa</h4>
+                        <pre id="result-description"></pre>
+                    </div>
+                </article>
+            </section>
+
+            <section class="panel history-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Timeline</p>
+                        <h2>Histórico</h2>
+                    </div>
+                </div>
+
+                <div class="empty-state" id="history-locked-state">
+                    Faça login para listar gerações persistidas, paginar e reabrir resultados antigos.
+                </div>
+
+                <div class="stack" id="history-content" hidden>
+                    <div class="history-toolbar">
+                        <label class="field compact-field">
+                            <span>Itens por página</span>
+                            <select id="history-limit-select">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
+                        </label>
+                        <button class="button button-ghost" id="refresh-history-button" type="button">
+                            Atualizar
+                        </button>
+                    </div>
+
+                    <div class="history-list" id="history-list"></div>
+
+                    <div class="pagination">
+                        <button class="button button-ghost" id="history-prev-button" type="button">Anterior</button>
+                        <span id="history-pagination-label">Página 1</span>
+                        <button class="button button-ghost" id="history-next-button" type="button">Próxima</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>

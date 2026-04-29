@@ -1,0 +1,14 @@
+import type { AuthUser } from '../modules/auth/auth.types';
+
+declare global {
+    namespace Express {
+        interface Request {
+            auth?: {
+                token: string;
+                user: AuthUser;
+            };
+        }
+    }
+}
+
+export {};
