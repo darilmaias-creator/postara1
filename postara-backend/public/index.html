@@ -7,212 +7,335 @@
     <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-    <div class="shell">
-        <header class="hero">
-            <div>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-card">
                 <p class="eyebrow">Postara</p>
-                <h1>Seu painel para autenticação, geração e histórico</h1>
-                <p class="hero-copy">
-                    Uma SPA simples, servida pelo backend, pronta para validar fluxo de produto antes
-                    do frontend definitivo.
+                <h1>Conteúdo com fluxo de produto</h1>
+                <p>
+                    Um workspace enxuto para validar autenticação, geração e histórico sem deixar tudo
+                    esmagado em uma única tela.
                 </p>
             </div>
-            <div class="hero-status">
-                <span class="badge" id="plan-badge">Plano Free</span>
-                <span class="badge badge-muted" id="session-badge">Sessão local ativa</span>
-            </div>
-        </header>
 
-        <main class="layout">
-            <section class="panel auth-panel">
-                <div class="panel-heading">
-                    <div>
-                        <p class="panel-kicker">Conta</p>
-                        <h2>Autenticação</h2>
-                    </div>
+            <nav class="nav-card" aria-label="Navegação principal">
+                <button class="nav-link is-active" data-view-target="dashboard" type="button">
+                    <span class="nav-link-label">Visão geral</span>
+                    <span class="nav-link-copy">Resumo do workspace</span>
+                </button>
+                <button class="nav-link" data-view-target="generate" type="button">
+                    <span class="nav-link-label">Gerar</span>
+                    <span class="nav-link-copy">Criar novo conteúdo</span>
+                </button>
+                <button class="nav-link" data-view-target="history" type="button">
+                    <span class="nav-link-label">Histórico</span>
+                    <span class="nav-link-copy">Reabrir gerações salvas</span>
+                </button>
+                <button class="nav-link" data-view-target="account" type="button">
+                    <span class="nav-link-label">Conta</span>
+                    <span class="nav-link-copy">Entrar e gerenciar plano</span>
+                </button>
+            </nav>
+
+            <section class="sidebar-status panel">
+                <p class="panel-kicker">Sessão</p>
+                <div class="stack">
+                    <span class="badge" id="plan-badge">Plano Free</span>
+                    <span class="badge badge-muted" id="session-badge">Sessão local ativa</span>
                 </div>
+            </section>
+        </aside>
 
-                <div id="guest-auth-view">
-                    <div class="tabs">
-                        <button class="tab is-active" id="show-login-tab" type="button">Entrar</button>
-                        <button class="tab" id="show-register-tab" type="button">Criar conta</button>
-                    </div>
-
-                    <form class="stack" id="login-form">
-                        <label class="field">
-                            <span>E-mail</span>
-                            <input type="email" name="email" placeholder="voce@email.com" required />
-                        </label>
-                        <label class="field">
-                            <span>Senha</span>
-                            <input type="password" name="password" placeholder="********" required />
-                        </label>
-                        <button class="button button-primary" type="submit">Entrar</button>
-                    </form>
-
-                    <form class="stack" id="register-form" hidden>
-                        <label class="field">
-                            <span>Nome</span>
-                            <input type="text" name="name" placeholder="Seu nome" />
-                        </label>
-                        <label class="field">
-                            <span>E-mail</span>
-                            <input type="email" name="email" placeholder="voce@email.com" required />
-                        </label>
-                        <label class="field">
-                            <span>Senha</span>
-                            <input type="password" name="password" placeholder="Mínimo de 8 caracteres" required />
-                        </label>
-                        <button class="button button-primary" type="submit">Criar conta</button>
-                    </form>
-                </div>
-
-                <div class="stack" id="member-auth-view" hidden>
-                    <div class="member-card">
-                        <p class="member-name" id="member-name">Usuário</p>
-                        <p class="member-email" id="member-email">email@email.com</p>
-                        <div class="member-meta">
-                            <span class="badge" id="member-plan-badge">Free</span>
-                            <span class="badge badge-muted" id="member-id-badge">ID</span>
-                        </div>
-                    </div>
-
-                    <div class="stack-inline">
-                        <button class="button" id="subscription-toggle-button" type="button">
-                            Alterar assinatura
-                        </button>
-                        <button class="button button-ghost" id="refresh-profile-button" type="button">
-                            Atualizar perfil
-                        </button>
-                    </div>
-
-                    <button class="button button-danger" id="logout-button" type="button">Sair</button>
-                    <p class="hint">
-                        O botão de assinatura usa a rota dev-only que criamos para validar os fluxos
-                        `free` e `premium`.
+        <div class="workspace">
+            <header class="workspace-header panel">
+                <div>
+                    <p class="panel-kicker">Workspace</p>
+                    <h2 id="view-title">Visão geral</h2>
+                    <p class="workspace-copy" id="view-description">
+                        Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.
                     </p>
                 </div>
-            </section>
-
-            <section class="panel generator-panel">
-                <div class="panel-heading">
-                    <div>
-                        <p class="panel-kicker">Core</p>
-                        <h2>Gerar conteúdo</h2>
-                    </div>
+                <div class="workspace-actions">
+                    <button class="button button-ghost" data-go-view="account" type="button">Conta</button>
+                    <button class="button button-primary" data-go-view="generate" type="button">Novo post</button>
                 </div>
+            </header>
 
-                <form class="stack" id="generator-form">
-                    <label class="field">
-                        <span>Nome do produto</span>
-                        <input type="text" name="productName" placeholder="Ex.: Cafeteira Elétrica" required />
-                    </label>
+            <main class="workspace-content">
+                <section class="view is-active" data-view="dashboard">
+                    <div class="view-grid view-grid-dashboard">
+                        <section class="panel spotlight-panel">
+                            <p class="panel-kicker">Panorama</p>
+                            <h3>Agora o app respira melhor</h3>
+                            <p class="spotlight-copy">
+                                Separamos o fluxo em áreas claras para você testar no celular e no desktop
+                                sem a sensação de ter tudo disputando espaço ao mesmo tempo.
+                            </p>
+                            <div class="spotlight-actions">
+                                <button class="button button-primary" data-go-view="generate" type="button">
+                                    Gerar conteúdo
+                                </button>
+                                <button class="button button-ghost" data-go-view="history" type="button">
+                                    Ver histórico
+                                </button>
+                            </div>
+                        </section>
 
-                    <label class="field">
-                        <span>Características</span>
-                        <textarea name="productFeatures" rows="4" placeholder="Ex.: 15 xícaras, timer programável"></textarea>
-                    </label>
+                        <section class="panel summary-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Conta</p>
+                                    <h3>Status atual</h3>
+                                </div>
+                            </div>
+                            <p class="summary-title" id="dashboard-auth-status">Navegação em modo visitante.</p>
+                            <p class="summary-copy" id="dashboard-plan-status">
+                                Faça login para salvar histórico e desbloquear o fluxo premium.
+                            </p>
+                        </section>
 
-                    <label class="field">
-                        <span>Público-alvo</span>
-                        <input type="text" name="targetAudience" placeholder="Ex.: quem busca praticidade" />
-                    </label>
+                        <section class="panel summary-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Biblioteca</p>
+                                    <h3>Histórico</h3>
+                                </div>
+                            </div>
+                            <p class="summary-title" id="dashboard-history-status">Seu histórico ainda está vazio.</p>
+                            <p class="summary-copy">
+                                As gerações autenticadas ficam prontas para reabrir, paginar e reutilizar.
+                            </p>
+                        </section>
 
-                    <label class="field">
-                        <span>Tom</span>
-                        <input type="text" name="tone" placeholder="Ex.: alegre, sofisticado, direto" />
-                    </label>
-
-                    <label class="field">
-                        <span>Modo de geração</span>
-                        <select name="generationMode" id="generation-mode-select">
-                            <option value="short">Short</option>
-                            <option value="medium">Medium</option>
-                            <option value="premium">Premium</option>
-                        </select>
-                    </label>
-
-                    <p class="hint" id="generation-mode-hint">
-                        Usuários free geram em modo short. Premium libera short, medium e premium.
-                    </p>
-
-                    <button class="button button-primary" id="generate-button" type="submit">
-                        Gerar post
-                    </button>
-                </form>
-            </section>
-
-            <section class="panel result-panel">
-                <div class="panel-heading">
-                    <div>
-                        <p class="panel-kicker">Output</p>
-                        <h2>Resultado</h2>
+                        <section class="panel summary-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Preview</p>
+                                    <h3>Último resultado</h3>
+                                </div>
+                            </div>
+                            <p class="summary-title" id="dashboard-result-status">Nenhum conteúdo gerado ainda.</p>
+                            <p class="summary-copy">
+                                Quando você gerar ou reabrir um item do histórico, o resumo aparece aqui.
+                            </p>
+                        </section>
                     </div>
-                </div>
+                </section>
 
-                <div class="empty-state" id="result-empty-state">
-                    Gere um post para visualizar título, legenda, CTA, hashtags e metadados.
-                </div>
+                <section class="view" data-view="generate" hidden>
+                    <div class="view-grid view-grid-split">
+                        <section class="panel generator-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Core</p>
+                                    <h3>Gerar conteúdo</h3>
+                                </div>
+                            </div>
 
-                <article class="result-view" id="result-view" hidden>
-                    <div class="result-meta" id="result-meta"></div>
-                    <h3 id="result-title"></h3>
-                    <div class="result-block">
-                        <h4>Legenda</h4>
-                        <p id="result-caption"></p>
-                    </div>
-                    <div class="result-block">
-                        <h4>CTA</h4>
-                        <p id="result-cta"></p>
-                    </div>
-                    <div class="result-block">
-                        <h4>Hashtags</h4>
-                        <div class="tag-list" id="result-hashtags"></div>
-                    </div>
-                    <div class="result-block">
-                        <h4>Descrição completa</h4>
-                        <pre id="result-description"></pre>
-                    </div>
-                </article>
-            </section>
+                            <form class="stack" id="generator-form">
+                                <label class="field">
+                                    <span>Nome do produto</span>
+                                    <input type="text" name="productName" placeholder="Ex.: Cafeteira Elétrica" required />
+                                </label>
 
-            <section class="panel history-panel">
-                <div class="panel-heading">
-                    <div>
-                        <p class="panel-kicker">Timeline</p>
-                        <h2>Histórico</h2>
+                                <label class="field">
+                                    <span>Características</span>
+                                    <textarea name="productFeatures" rows="4" placeholder="Ex.: 15 xícaras, timer programável"></textarea>
+                                </label>
+
+                                <label class="field">
+                                    <span>Público-alvo</span>
+                                    <input type="text" name="targetAudience" placeholder="Ex.: quem busca praticidade" />
+                                </label>
+
+                                <label class="field">
+                                    <span>Tom</span>
+                                    <input type="text" name="tone" placeholder="Ex.: alegre, sofisticado, direto" />
+                                </label>
+
+                                <label class="field">
+                                    <span>Modo de geração</span>
+                                    <select name="generationMode" id="generation-mode-select">
+                                        <option value="short">Short</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="premium">Premium</option>
+                                    </select>
+                                </label>
+
+                                <p class="hint" id="generation-mode-hint">
+                                    Usuários free geram em modo short. Premium libera short, medium e premium.
+                                </p>
+
+                                <button class="button button-primary" id="generate-button" type="submit">
+                                    Gerar post
+                                </button>
+                            </form>
+                        </section>
+
+                        <section class="panel preview-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Output</p>
+                                    <h3>Prévia do conteúdo</h3>
+                                </div>
+                            </div>
+
+                            <div class="result-slot" data-result-slot="generate"></div>
+                        </section>
                     </div>
-                </div>
+                </section>
 
-                <div class="empty-state" id="history-locked-state">
-                    Faça login para listar gerações persistidas, paginar e reabrir resultados antigos.
-                </div>
+                <section class="view" data-view="history" hidden>
+                    <div class="view-grid view-grid-split">
+                        <section class="panel history-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Timeline</p>
+                                    <h3>Histórico</h3>
+                                </div>
+                            </div>
 
-                <div class="stack" id="history-content" hidden>
-                    <div class="history-toolbar">
-                        <label class="field compact-field">
-                            <span>Itens por página</span>
-                            <select id="history-limit-select">
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="20">20</option>
-                            </select>
-                        </label>
-                        <button class="button button-ghost" id="refresh-history-button" type="button">
-                            Atualizar
-                        </button>
+                            <div class="empty-state" id="history-locked-state">
+                                Faça login para listar gerações persistidas, paginar e reabrir resultados antigos.
+                            </div>
+
+                            <div class="stack" id="history-content" hidden>
+                                <div class="history-toolbar">
+                                    <label class="field compact-field">
+                                        <span>Itens por página</span>
+                                        <select id="history-limit-select">
+                                            <option value="5">5</option>
+                                            <option value="10">10</option>
+                                            <option value="20">20</option>
+                                        </select>
+                                    </label>
+                                    <button class="button button-ghost" id="refresh-history-button" type="button">
+                                        Atualizar
+                                    </button>
+                                </div>
+
+                                <div class="history-list" id="history-list"></div>
+
+                                <div class="pagination">
+                                    <button class="button button-ghost" id="history-prev-button" type="button">Anterior</button>
+                                    <span id="history-pagination-label">Página 1</span>
+                                    <button class="button button-ghost" id="history-next-button" type="button">Próxima</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="panel preview-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Reabertura</p>
+                                    <h3>Resultado selecionado</h3>
+                                </div>
+                            </div>
+
+                            <div class="result-slot" data-result-slot="history"></div>
+                        </section>
                     </div>
+                </section>
 
-                    <div class="history-list" id="history-list"></div>
+                <section class="view" data-view="account" hidden>
+                    <div class="view-grid view-grid-account">
+                        <section class="panel auth-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Conta</p>
+                                    <h3>Autenticação</h3>
+                                </div>
+                            </div>
 
-                    <div class="pagination">
-                        <button class="button button-ghost" id="history-prev-button" type="button">Anterior</button>
-                        <span id="history-pagination-label">Página 1</span>
-                        <button class="button button-ghost" id="history-next-button" type="button">Próxima</button>
+                            <div id="guest-auth-view">
+                                <div class="tabs">
+                                    <button class="tab is-active" id="show-login-tab" type="button">Entrar</button>
+                                    <button class="tab" id="show-register-tab" type="button">Criar conta</button>
+                                </div>
+
+                                <form class="stack" id="login-form">
+                                    <label class="field">
+                                        <span>E-mail</span>
+                                        <input type="email" name="email" placeholder="voce@email.com" required />
+                                    </label>
+                                    <label class="field">
+                                        <span>Senha</span>
+                                        <input type="password" name="password" placeholder="********" required />
+                                    </label>
+                                    <button class="button button-primary" type="submit">Entrar</button>
+                                </form>
+
+                                <form class="stack" id="register-form" hidden>
+                                    <label class="field">
+                                        <span>Nome</span>
+                                        <input type="text" name="name" placeholder="Seu nome" />
+                                    </label>
+                                    <label class="field">
+                                        <span>E-mail</span>
+                                        <input type="email" name="email" placeholder="voce@email.com" required />
+                                    </label>
+                                    <label class="field">
+                                        <span>Senha</span>
+                                        <input type="password" name="password" placeholder="Mínimo de 8 caracteres" required />
+                                    </label>
+                                    <button class="button button-primary" type="submit">Criar conta</button>
+                                </form>
+                            </div>
+
+                            <div class="stack" id="member-auth-view" hidden>
+                                <div class="member-card">
+                                    <p class="member-name" id="member-name">Usuário</p>
+                                    <p class="member-email" id="member-email">email@email.com</p>
+                                    <div class="member-meta">
+                                        <span class="badge" id="member-plan-badge">Free</span>
+                                        <span class="badge badge-muted" id="member-id-badge">ID</span>
+                                    </div>
+                                </div>
+
+                                <div class="stack-inline">
+                                    <button class="button" id="subscription-toggle-button" type="button">
+                                        Alterar assinatura
+                                    </button>
+                                    <button class="button button-ghost" id="refresh-profile-button" type="button">
+                                        Atualizar perfil
+                                    </button>
+                                </div>
+
+                                <button class="button button-danger" id="logout-button" type="button">Sair</button>
+                                <p class="hint">
+                                    O botão de assinatura usa a rota dev-only que criamos para validar os fluxos
+                                    `free` e `premium`.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section class="panel account-guide-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Planos</p>
+                                    <h3>Como o fluxo funciona</h3>
+                                </div>
+                            </div>
+
+                            <div class="guide-list">
+                                <article class="guide-card">
+                                    <h4>Free</h4>
+                                    <p>Modo `short`, ideal para validação rápida e uso inicial do app.</p>
+                                </article>
+                                <article class="guide-card">
+                                    <h4>Premium</h4>
+                                    <p>Libera `short`, `medium` e `premium`, com textos mais completos e flexíveis.</p>
+                                </article>
+                                <article class="guide-card">
+                                    <h4>Histórico</h4>
+                                    <p>Ao autenticar, cada geração fica salva para reabrir e reaproveitar depois.</p>
+                                </article>
+                            </div>
+                        </section>
                     </div>
-                </div>
-            </section>
-        </main>
+                </section>
+            </main>
+        </div>
     </div>
 
     <div class="toast" id="toast" hidden></div>

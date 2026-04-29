@@ -3,11 +3,31 @@ const STORAGE_KEYS = {
     sessionId: 'postara.session.id'
 };
 
+const VIEW_CONFIG = {
+    dashboard: {
+        title: 'Visão geral',
+        description: 'Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.'
+    },
+    generate: {
+        title: 'Gerar conteúdo',
+        description: 'Crie novos posts com o plano atual e acompanhe a prévia completa em um espaço dedicado.'
+    },
+    history: {
+        title: 'Histórico',
+        description: 'Reabra resultados antigos com mais conforto e navegue pela timeline com paginação.'
+    },
+    account: {
+        title: 'Conta',
+        description: 'Entre, altere o plano de teste e mantenha o app alinhado ao tipo de usuário.'
+    }
+};
+
 const state = {
     token: localStorage.getItem(STORAGE_KEYS.token),
     sessionId: localStorage.getItem(STORAGE_KEYS.sessionId) || crypto.randomUUID(),
     user: null,
     currentAuthTab: 'login',
+    currentView: 'dashboard',
     currentResult: null,
     currentHistoryMeta: null,
     history: {
@@ -21,11 +41,21 @@ const state = {
 
 localStorage.setItem(STORAGE_KEYS.sessionId, state.sessionId);
 
-// Referências centrais do DOM para manter o código do scaffold organizado.
+// Centralizamos os seletores para deixar a manutenção da SPA simples conforme o layout evolui.
 const elements = {
     toast: document.getElementById('toast'),
     planBadge: document.getElementById('plan-badge'),
     sessionBadge: document.getElementById('session-badge'),
+    viewTitle: document.getElementById('view-title'),
+    viewDescription: document.getElementById('view-description'),
+    viewButtons: [...document.querySelectorAll('[data-view-target]')],
+    goViewButtons: [...document.querySelectorAll('[data-go-view]')],
+    views: [...document.querySelectorAll('[data-view]')],
+    resultSlots: [...document.querySelectorAll('[data-result-slot]')],
+    dashboardAuthStatus: document.getElementById('dashboard-auth-status'),
+    dashboardPlanStatus: document.getElementById('dashboard-plan-status'),
+    dashboardHistoryStatus: document.getElementById('dashboard-history-status'),
+    dashboardResultStatus: document.getElementById('dashboard-result-status'),
     guestAuthView: document.getElementById('guest-auth-view'),
     memberAuthView: document.getElementById('member-auth-view'),
     showLoginTab: document.getElementById('show-login-tab'),
@@ -43,14 +73,6 @@ const elements = {
     generateButton: document.getElementById('generate-button'),
     generationModeSelect: document.getElementById('generation-mode-select'),
     generationModeHint: document.getElementById('generation-mode-hint'),
-    resultEmptyState: document.getElementById('result-empty-state'),
-    resultView: document.getElementById('result-view'),
-    resultMeta: document.getElementById('result-meta'),
-    resultTitle: document.getElementById('result-title'),
-    resultCaption: document.getElementById('result-caption'),
-    resultCta: document.getElementById('result-cta'),
-    resultHashtags: document.getElementById('result-hashtags'),
-    resultDescription: document.getElementById('result-description'),
     historyLockedState: document.getElementById('history-locked-state'),
     historyContent: document.getElementById('history-content'),
     historyList: document.getElementById('history-list'),
@@ -127,6 +149,32 @@ const setLoading = (button, isLoading, loadingText) => {
     button.textContent = isLoading ? loadingText : button.dataset.defaultLabel;
 };
 
+const renderView = () => {
+    const config = VIEW_CONFIG[state.currentView] || VIEW_CONFIG.dashboard;
+
+    elements.viewTitle.textContent = config.title;
+    elements.viewDescription.textContent = config.description;
+
+    elements.viewButtons.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.viewTarget === state.currentView);
+    });
+
+    elements.views.forEach((view) => {
+        const isActive = view.dataset.view === state.currentView;
+        view.hidden = !isActive;
+        view.classList.toggle('is-active', isActive);
+    });
+};
+
+const setCurrentView = (view) => {
+    if (!VIEW_CONFIG[view]) {
+        return;
+    }
+
+    state.currentView = view;
+    renderView();
+};
+
 // Mantemos a UI consistente com o plano do usuário para evitar pedir algo que o backend vai negar ou ajustar.
 const applyPlanToModeSelector = () => {
     const plan = state.user?.subscriptionPlan || 'free';
@@ -151,6 +199,104 @@ const applyPlanToModeSelector = () => {
     }
 };
 
+const renderDashboard = () => {
+    if (!state.user) {
+        elements.dashboardAuthStatus.textContent = 'Navegação em modo visitante.';
+        elements.dashboardPlanStatus.textContent =
+            'Faça login para salvar histórico e desbloquear o fluxo premium.';
+    } else {
+        const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
+        elements.dashboardAuthStatus.textContent = `${state.user.name || 'Usuário Postara'} conectado(a).`;
+        elements.dashboardPlanStatus.textContent =
+            `Plano atual: ${planLabel}. O app já ajusta os modos permitidos para esse perfil.`;
+    }
+
+    if (!state.user) {
+        elements.dashboardHistoryStatus.textContent = 'Seu histórico está bloqueado até o login.';
+    } else if (state.history.total === 0) {
+        elements.dashboardHistoryStatus.textContent = 'Nenhuma geração salva ainda para esta conta.';
+    } else {
+        elements.dashboardHistoryStatus.textContent =
+            `${state.history.total} geração(ões) disponíveis para reabrir e reaproveitar.`;
+    }
+
+    if (!state.currentResult) {
+        elements.dashboardResultStatus.textContent = 'Nenhum conteúdo gerado ainda.';
+    } else {
+        elements.dashboardResultStatus.textContent =
+            `${state.currentResult.title} • ${state.currentResult.generationMode} • ${state.currentResult.source}`;
+    }
+};
+
+const getResultMarkup = (result, meta = null) => {
+    if (!result) {
+        return `
+            <div class="empty-state">
+                Gere um post ou reabra um item do histórico para visualizar título, legenda, CTA, hashtags e metadados.
+            </div>
+        `;
+    }
+
+    const badges = [
+        `Plano ${result.subscriptionPlan}`,
+        `Modo ${result.generationMode}`,
+        `${result.source} • ${result.model}`,
+        result.fallbackUsed ? 'Fallback ativo' : 'Primário ativo'
+    ];
+
+    if (result.modeAdjusted) {
+        badges.push('Modo ajustado pela regra do plano');
+    }
+
+    if (meta?.historyId) {
+        badges.push(`Histórico ${meta.historyId.slice(0, 8)}`);
+    }
+
+    return `
+        <article class="result-view">
+            <div class="result-meta">
+                ${badges
+                    .map((badge) => `<span class="badge badge-muted">${escapeHtml(badge)}</span>`)
+                    .join('')}
+            </div>
+            <h3>${escapeHtml(result.title)}</h3>
+            <div class="result-block">
+                <h4>Legenda</h4>
+                <p>${escapeHtml(result.caption)}</p>
+            </div>
+            <div class="result-block">
+                <h4>CTA</h4>
+                <p>${escapeHtml(result.cta)}</p>
+            </div>
+            <div class="result-block">
+                <h4>Hashtags</h4>
+                <div class="tag-list">
+                    ${result.hashtags
+                        .map((hashtag) => `<span class="tag">${escapeHtml(hashtag)}</span>`)
+                        .join('')}
+                </div>
+            </div>
+            <div class="result-block">
+                <h4>Descrição completa</h4>
+                <pre>${escapeHtml(result.description)}</pre>
+            </div>
+        </article>
+    `;
+};
+
+// Renderizamos a mesma resposta em slots diferentes para reaproveitar o preview nas áreas de geração e histórico.
+const renderResult = (result, meta = null) => {
+    state.currentResult = result;
+    state.currentHistoryMeta = meta;
+
+    const markup = getResultMarkup(result, meta);
+    elements.resultSlots.forEach((slot) => {
+        slot.innerHTML = markup;
+    });
+
+    renderDashboard();
+};
+
 const renderAuthView = () => {
     const isAuthenticated = Boolean(state.user);
 
@@ -170,6 +316,7 @@ const renderAuthView = () => {
         elements.loginForm.hidden = !showingLogin;
         elements.registerForm.hidden = showingLogin;
         applyPlanToModeSelector();
+        renderDashboard();
         return;
     }
 
@@ -179,47 +326,9 @@ const renderAuthView = () => {
     elements.memberIdBadge.textContent = `ID ${state.user.id.slice(0, 8)}`;
     elements.subscriptionToggleButton.textContent =
         state.user.subscriptionPlan === 'premium' ? 'Voltar para Free' : 'Ir para Premium';
+
     applyPlanToModeSelector();
-};
-
-const renderResult = (result, meta = null) => {
-    state.currentResult = result;
-    state.currentHistoryMeta = meta;
-
-    if (!result) {
-        elements.resultEmptyState.hidden = false;
-        elements.resultView.hidden = true;
-        return;
-    }
-
-    elements.resultEmptyState.hidden = true;
-    elements.resultView.hidden = false;
-    elements.resultTitle.textContent = result.title;
-    elements.resultCaption.textContent = result.caption;
-    elements.resultCta.textContent = result.cta;
-    elements.resultDescription.textContent = result.description;
-    elements.resultHashtags.innerHTML = result.hashtags
-        .map((hashtag) => `<span class="tag">${escapeHtml(hashtag)}</span>`)
-        .join('');
-
-    const badges = [
-        `Plano ${result.subscriptionPlan}`,
-        `Modo ${result.generationMode}`,
-        `${result.source} • ${result.model}`,
-        result.fallbackUsed ? 'Fallback ativo' : 'Primário ativo'
-    ];
-
-    if (result.modeAdjusted) {
-        badges.push('Modo ajustado pela regra do plano');
-    }
-
-    if (meta?.historyId) {
-        badges.push(`Histórico ${meta.historyId.slice(0, 8)}`);
-    }
-
-    elements.resultMeta.innerHTML = badges
-        .map((badge) => `<span class="badge badge-muted">${escapeHtml(badge)}</span>`)
-        .join('');
+    renderDashboard();
 };
 
 const renderHistory = () => {
@@ -230,11 +339,13 @@ const renderHistory = () => {
 
     if (!isAuthenticated) {
         elements.historyList.innerHTML = '';
+        renderDashboard();
         return;
     }
 
     if (state.history.entries.length === 0) {
-        elements.historyList.innerHTML = '<div class="empty-state">Nenhuma geração salva para este usuário ainda.</div>';
+        elements.historyList.innerHTML =
+            '<div class="empty-state">Nenhuma geração salva para este usuário ainda.</div>';
     } else {
         elements.historyList.innerHTML = state.history.entries
             .map((entry) => {
@@ -263,6 +374,7 @@ const renderHistory = () => {
     elements.historyPaginationLabel.textContent = `Página ${state.history.page} • ${state.history.total} itens`;
     elements.historyPrevButton.disabled = state.history.page <= 1;
     elements.historyNextButton.disabled = !state.history.hasNextPage;
+    renderDashboard();
 };
 
 const syncHistoryLimit = () => {
@@ -331,6 +443,7 @@ const handleAuthSuccess = async (payload, successMessage) => {
     persistToken(payload.data.token);
     updateAuthenticatedState(payload.data.user);
     await loadHistoryPage(1);
+    setCurrentView('generate');
     setToast(successMessage);
 };
 
@@ -386,6 +499,7 @@ const handleLogout = async () => {
         persistToken(null);
         updateAuthenticatedState(null);
         resetHistoryState();
+        setCurrentView('dashboard');
         setToast('Sessão encerrada.');
     } catch (error) {
         setToast(error.message, 'error');
@@ -449,6 +563,7 @@ const handleGenerateSubmit = async (event) => {
             }
         });
 
+        setCurrentView('generate');
         renderResult(payload.data, payload.meta);
 
         if (state.user) {
@@ -466,6 +581,7 @@ const handleGenerateSubmit = async (event) => {
 const openHistoryEntry = async (historyId) => {
     try {
         const payload = await apiRequest(`/api/ai/history/${historyId}`);
+        setCurrentView('history');
         renderResult(payload.data.response, {
             historyId: payload.data.id,
             createdAt: payload.data.createdAt
@@ -477,6 +593,18 @@ const openHistoryEntry = async (historyId) => {
 };
 
 const wireEvents = () => {
+    elements.viewButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            setCurrentView(button.dataset.viewTarget);
+        });
+    });
+
+    elements.goViewButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            setCurrentView(button.dataset.goView);
+        });
+    });
+
     elements.showLoginTab.addEventListener('click', () => {
         state.currentAuthTab = 'login';
         renderAuthView();
@@ -527,6 +655,8 @@ const wireEvents = () => {
 
 const bootstrap = async () => {
     syncHistoryLimit();
+    renderView();
+    renderDashboard();
     renderAuthView();
     renderResult(null);
     renderHistory();
