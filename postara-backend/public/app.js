@@ -3,6 +3,11 @@ const STORAGE_KEYS = {
     sessionId: 'postara.session.id'
 };
 
+const runtimeConfig = window.POSTARA_CONFIG || {};
+const API_BASE_URL = String(runtimeConfig.apiBaseUrl || '').replace(/\/$/, '');
+const IS_STATIC_PREVIEW_WITHOUT_API =
+    window.location.hostname.endsWith('vercel.app') && !API_BASE_URL;
+
 const VIEW_CONFIG = {
     dashboard: {
         title: 'Visão geral',
@@ -46,6 +51,7 @@ const elements = {
     toast: document.getElementById('toast'),
     planBadge: document.getElementById('plan-badge'),
     sessionBadge: document.getElementById('session-badge'),
+    deploymentNotice: document.getElementById('deployment-notice'),
     viewTitle: document.getElementById('view-title'),
     viewDescription: document.getElementById('view-description'),
     viewButtons: [...document.querySelectorAll('[data-view-target]')],
@@ -108,7 +114,25 @@ const setToast = (message, type = 'success') => {
     }, 3500);
 };
 
+const renderDeploymentNotice = () => {
+    if (API_BASE_URL) {
+        elements.deploymentNotice.hidden = false;
+        elements.deploymentNotice.textContent = `Frontend conectado à API externa em ${API_BASE_URL}.`;
+        return;
+    }
+
+    if (IS_STATIC_PREVIEW_WITHOUT_API) {
+        elements.deploymentNotice.hidden = false;
+        elements.deploymentNotice.textContent =
+            'Este preview da Vercel está publicando só o visual do app. Para testar login, geração e histórico, precisamos publicar a API e conectar a URL dela aqui.';
+        return;
+    }
+
+    elements.deploymentNotice.hidden = true;
+};
+
 const apiRequest = async (path, options = {}) => {
+    const requestUrl = `${API_BASE_URL}${path}`;
     const headers = {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {})
@@ -118,16 +142,28 @@ const apiRequest = async (path, options = {}) => {
         headers.Authorization = `Bearer ${state.token}`;
     }
 
-    const response = await fetch(path, {
+    const response = await fetch(requestUrl, {
         method: options.method || 'GET',
         headers,
         body: options.body ? JSON.stringify(options.body) : undefined
     });
 
-    const payload = await response.json().catch(() => null);
+    const contentType = response.headers.get('content-type') || '';
+    const payload = contentType.includes('application/json')
+        ? await response.json().catch(() => null)
+        : null;
 
     if (!response.ok) {
-        const message = payload?.error?.message || 'A requisição falhou.';
+        let message = payload?.error?.message || 'A requisição falhou.';
+
+        if (IS_STATIC_PREVIEW_WITHOUT_API && !API_BASE_URL) {
+            message =
+                'Este preview da Vercel ainda não tem backend conectado. O visual está pronto, mas login, geração e histórico precisam de uma API publicada.';
+        } else if (!contentType.includes('application/json')) {
+            message =
+                'A resposta da API não veio no formato esperado. Pode ser uma rota inexistente ou um backend não conectado.';
+        }
+
         const error = new Error(message);
         error.payload = payload;
         throw error;
@@ -655,6 +691,7 @@ const wireEvents = () => {
 
 const bootstrap = async () => {
     syncHistoryLimit();
+    renderDeploymentNotice();
     renderView();
     renderDashboard();
     renderAuthView();

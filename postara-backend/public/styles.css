@@ -178,6 +178,17 @@ button {
     margin: 0;
 }
 
+.deployment-notice {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(247, 185, 85, 0.28);
+    background: rgba(247, 185, 85, 0.08);
+    color: #f6deb1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
 .workspace-actions {
     display: flex;
     flex-wrap: wrap;
