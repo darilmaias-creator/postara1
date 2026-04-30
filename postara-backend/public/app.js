@@ -181,17 +181,11 @@ const renderDeploymentNotice = () => {
 
     elements.deploymentNotice.hidden = false;
     elements.deploymentNotice.textContent =
-        'Auth e histórico já estão conectados ao Supabase. O próximo passo é publicar a geração de conteúdo.';
+        'Auth e histórico já estão conectados ao Supabase. A geração agora usa a API da própria Vercel quando a chave Gemini estiver configurada.';
 };
 
 const apiRequest = async (path, options = {}) => {
-    if (!API_BASE_URL) {
-        throw new Error(
-            'A geração ainda não está conectada a uma API publicada. Auth e histórico já estão funcionando via Supabase.'
-        );
-    }
-
-    const requestUrl = `${API_BASE_URL}${path}`;
+    const requestUrl = API_BASE_URL ? `${API_BASE_URL}${path}` : path;
     const headers = {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {})
