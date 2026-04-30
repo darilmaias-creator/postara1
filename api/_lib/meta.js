@@ -11,6 +11,7 @@ const META_SCOPES = [
 const getMetaConfig = () => {
     const appId = process.env.META_APP_ID;
     const appSecret = process.env.META_APP_SECRET;
+    const configId = process.env.META_CONFIG_ID || process.env.META_BUSINESS_LOGIN_CONFIG_ID || '';
 
     if (!appId || !appSecret) {
         throw new Error('As variáveis META_APP_ID e META_APP_SECRET precisam ser configuradas.');
@@ -19,19 +20,26 @@ const getMetaConfig = () => {
     return {
         appId,
         appSecret,
+        configId,
         version: process.env.META_API_VERSION || DEFAULT_META_API_VERSION
     };
 };
 
 const buildMetaOAuthUrl = ({ redirectUri, state }) => {
-    const { appId, version } = getMetaConfig();
+    const { appId, version, configId } = getMetaConfig();
     const params = new URLSearchParams({
         client_id: appId,
         redirect_uri: redirectUri,
         response_type: 'code',
-        state,
-        scope: META_SCOPES.join(',')
+        state
     });
+
+    if (configId) {
+        params.set('config_id', configId);
+        params.set('override_default_response_type', 'true');
+    } else {
+        params.set('scope', META_SCOPES.join(','));
+    }
 
     return `https://www.facebook.com/${version}/dialog/oauth?${params.toString()}`;
 };

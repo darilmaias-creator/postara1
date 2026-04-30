@@ -26,6 +26,7 @@ Adicione estas variáveis no projeto:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `META_APP_ID`
 - `META_APP_SECRET`
+- `META_CONFIG_ID`
 - `POSTARA_SOCIAL_SECRET`
 - `POSTARA_PUBLIC_APP_URL=https://postara1.vercel.app`
 
@@ -41,6 +42,14 @@ No app da Meta, configure:
 - produto de login/OAuth
 - `Valid OAuth Redirect URI`:
   - `https://postara1.vercel.app/api/social/meta/callback`
+
+Se o app foi criado com **Facebook Login for Business**, crie também uma configuração de login e copie o:
+
+- `Config ID`
+
+Esse valor vai na variável:
+
+- `META_CONFIG_ID`
 
 Permissões usadas pelo fluxo:
 
