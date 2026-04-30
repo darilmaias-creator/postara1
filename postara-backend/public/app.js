@@ -39,6 +39,7 @@ const VIEW_CONFIG = {
 const state = {
     sessionId: localStorage.getItem(STORAGE_KEYS.sessionId) || crypto.randomUUID(),
     user: null,
+    socialConnections: [],
     currentAuthTab: 'login',
     currentView: 'dashboard',
     currentResult: null,
@@ -48,6 +49,16 @@ const state = {
         isLoading: false,
         scope: null,
         optionIndex: null
+    },
+    publishState: {
+        isLoading: false,
+        results: []
+    },
+    publishDraft: {
+        connectionId: '',
+        facebook: true,
+        instagram: false,
+        mediaUrl: ''
     },
     history: {
         entries: [],
@@ -95,6 +106,11 @@ const elements = {
     subscriptionToggleButton: document.getElementById('subscription-toggle-button'),
     refreshProfileButton: document.getElementById('refresh-profile-button'),
     logoutButton: document.getElementById('logout-button'),
+    connectMetaButton: document.getElementById('connect-meta-button'),
+    refreshSocialButton: document.getElementById('refresh-social-button'),
+    disconnectMetaButton: document.getElementById('disconnect-meta-button'),
+    socialEmptyState: document.getElementById('social-empty-state'),
+    socialConnectionsList: document.getElementById('social-connections-list'),
     generatorForm: document.getElementById('generator-form'),
     generateButton: document.getElementById('generate-button'),
     generationModeSelect: document.getElementById('generation-mode-select'),
@@ -215,6 +231,209 @@ const createRequestContextFromHistoryRequest = (request = {}) => ({
     tone: String(request.tone || '').trim() || undefined,
     generationMode: request.requestedGenerationMode || request.appliedGenerationMode || 'short'
 });
+
+const getSelectedSocialConnection = () =>
+    state.socialConnections.find((connection) => connection.id === state.publishDraft.connectionId) ||
+    state.socialConnections[0] ||
+    null;
+
+const ensurePublishDraftConnection = () => {
+    const selectedConnection = getSelectedSocialConnection();
+
+    if (!selectedConnection) {
+        state.publishDraft.connectionId = '';
+        state.publishDraft.facebook = true;
+        state.publishDraft.instagram = false;
+        return null;
+    }
+
+    state.publishDraft.connectionId = selectedConnection.id;
+
+    if (!selectedConnection.supportsFacebook) {
+        state.publishDraft.facebook = false;
+    }
+
+    if (!selectedConnection.supportsInstagram) {
+        state.publishDraft.instagram = false;
+        state.publishDraft.mediaUrl = '';
+    }
+
+    if (!state.publishDraft.facebook && !state.publishDraft.instagram) {
+        state.publishDraft.facebook = Boolean(selectedConnection.supportsFacebook);
+        state.publishDraft.instagram = !state.publishDraft.facebook && Boolean(selectedConnection.supportsInstagram);
+    }
+
+    return selectedConnection;
+};
+
+const renderSocialConnections = () => {
+    const isAuthenticated = Boolean(state.user);
+    const hasConnections = state.socialConnections.length > 0;
+
+    elements.connectMetaButton.disabled = !isAuthenticated;
+    elements.refreshSocialButton.disabled = !isAuthenticated || !hasConnections;
+    elements.disconnectMetaButton.disabled = !isAuthenticated || !hasConnections;
+
+    if (!isAuthenticated) {
+        elements.socialEmptyState.hidden = false;
+        elements.socialEmptyState.textContent =
+            'Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.';
+        elements.socialConnectionsList.innerHTML = '';
+        return;
+    }
+
+    if (!hasConnections) {
+        elements.socialEmptyState.hidden = false;
+        elements.socialEmptyState.textContent =
+            'Nenhuma rede Meta conectada ainda. Use o botão acima para importar páginas do Facebook e contas profissionais do Instagram.';
+        elements.socialConnectionsList.innerHTML = '';
+        return;
+    }
+
+    elements.socialEmptyState.hidden = true;
+    elements.socialConnectionsList.innerHTML = state.socialConnections
+        .map(
+            (connection) => `
+                <article class="social-connection-card">
+                    <div class="result-meta">
+                        <span class="badge">Meta</span>
+                        ${connection.supportsFacebook ? '<span class="badge badge-muted">Facebook ativo</span>' : ''}
+                        ${connection.supportsInstagram ? '<span class="badge badge-muted">Instagram ativo</span>' : ''}
+                    </div>
+                    <h4 class="social-connection-title">${escapeHtml(connection.facebookPageName)}</h4>
+                    <p class="social-connection-copy">
+                        Página do Facebook pronta para receber posts.
+                        ${
+                            connection.instagramUsername
+                                ? ` Instagram vinculado: @${escapeHtml(connection.instagramUsername)}.`
+                                : ' Nenhum Instagram profissional vinculado nessa página.'
+                        }
+                    </p>
+                </article>
+            `
+        )
+        .join('');
+};
+
+const renderPublishResults = () => {
+    if (!state.publishState.results.length) {
+        return '';
+    }
+
+    return `
+        <div class="publish-status-list">
+            ${state.publishState.results
+                .map(
+                    (item) => `
+                        <article class="publish-status-item is-${escapeHtml(item.status)}">
+                            <strong>${escapeHtml(item.networkLabel)}</strong>
+                            <p>${escapeHtml(item.message)}</p>
+                        </article>
+                    `
+                )
+                .join('')}
+        </div>
+    `;
+};
+
+const buildPublishPanelMarkup = () => {
+    if (!state.currentResult) {
+        return '';
+    }
+
+    if (!state.user) {
+        return `
+            <div class="publish-panel">
+                <h4>Publicar em redes sociais</h4>
+                <div class="empty-state">Faça login e conecte suas redes sociais para publicar direto do app.</div>
+            </div>
+        `;
+    }
+
+    const selectedConnection = ensurePublishDraftConnection();
+
+    if (!selectedConnection) {
+        return `
+            <div class="publish-panel">
+                <h4>Publicar em redes sociais</h4>
+                <div class="empty-state">Conecte Instagram e/ou Facebook na aba Conta para postar a descrição selecionada.</div>
+            </div>
+        `;
+    }
+
+    const canFacebook = Boolean(selectedConnection.supportsFacebook);
+    const canInstagram = Boolean(selectedConnection.supportsInstagram);
+    const instagramSelected = state.publishDraft.instagram && canInstagram;
+    const publishDisabled =
+        state.publishState.isLoading ||
+        (!state.publishDraft.facebook && !instagramSelected) ||
+        (instagramSelected && !state.publishDraft.mediaUrl.trim());
+
+    return `
+        <div class="publish-panel">
+            <h4>Publicar em redes sociais</h4>
+            <label class="field">
+                <span>Conta conectada</span>
+                <select data-publish-connection-select>
+                    ${state.socialConnections
+                        .map(
+                            (connection) => `
+                                <option value="${escapeHtml(connection.id)}" ${
+                                    connection.id === selectedConnection.id ? 'selected' : ''
+                                }>
+                                    ${escapeHtml(connection.facebookPageName)}${
+                                        connection.instagramUsername ? ` • @${escapeHtml(connection.instagramUsername)}` : ''
+                                    }
+                                </option>
+                            `
+                        )
+                        .join('')}
+                </select>
+            </label>
+
+            <div class="checkbox-row">
+                <label class="checkbox-chip">
+                    <input type="checkbox" data-publish-facebook ${state.publishDraft.facebook && canFacebook ? 'checked' : ''} ${
+        canFacebook ? '' : 'disabled'
+    } />
+                    <span>Facebook</span>
+                </label>
+                <label class="checkbox-chip">
+                    <input type="checkbox" data-publish-instagram ${instagramSelected ? 'checked' : ''} ${
+        canInstagram ? '' : 'disabled'
+    } />
+                    <span>Instagram</span>
+                </label>
+            </div>
+
+            ${
+                instagramSelected
+                    ? `
+                        <label class="field">
+                            <span>URL pública da imagem para Instagram</span>
+                            <input
+                                type="url"
+                                placeholder="https://seu-servidor.com/imagem.jpg"
+                                value="${escapeHtml(state.publishDraft.mediaUrl)}"
+                                data-publish-media-url
+                            />
+                        </label>
+                    `
+                    : ''
+            }
+
+            <p class="hint">
+                Facebook pode publicar só o texto. Instagram exige uma imagem pública e usa o texto pronto selecionado no preview.
+            </p>
+
+            <button class="button button-primary" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
+                ${state.publishState.isLoading ? 'Postando...' : 'Postar descrição selecionada'}
+            </button>
+
+            ${renderPublishResults()}
+        </div>
+    `;
+};
 
 const setToast = (message, type = 'success') => {
     elements.toast.textContent = message;
@@ -538,6 +757,7 @@ const getResultMarkup = (result, meta = null) => {
                 <h4>Texto pronto para postar</h4>
                 <pre>${escapeHtml(selectedOption.description || buildPostReadyText(selectedOption))}</pre>
             </div>
+            ${buildPublishPanelMarkup()}
         </article>
     `;
 };
@@ -572,6 +792,7 @@ const renderAuthView = () => {
         elements.googleRegisterDivider.hidden = showingLogin;
         elements.accountNavSummary.textContent = 'Entrar e gerenciar plano';
         applyPlanToModeSelector();
+        renderSocialConnections();
         renderDashboard();
         return;
     }
@@ -588,6 +809,7 @@ const renderAuthView = () => {
         state.user.subscriptionPlan === 'premium' ? 'Voltar para Free' : 'Ir para Premium';
 
     applyPlanToModeSelector();
+    renderSocialConnections();
     renderDashboard();
 };
 
@@ -645,6 +867,7 @@ const updateAuthenticatedState = (user) => {
     state.user = user;
     renderAuthView();
     renderHistory();
+    renderSocialConnections();
 };
 
 const resetHistoryState = () => {
@@ -701,6 +924,63 @@ const loadCurrentUser = async () => {
     }
 };
 
+const loadSocialConnections = async () => {
+    if (!state.user) {
+        state.socialConnections = [];
+        state.publishDraft = {
+            connectionId: '',
+            facebook: true,
+            instagram: false,
+            mediaUrl: ''
+        };
+        state.publishState.results = [];
+        renderSocialConnections();
+
+        if (state.currentResult) {
+            renderResult(state.currentResult, state.currentHistoryMeta);
+        }
+        return;
+    }
+
+    const payload = await apiRequest('/api/social/connections');
+    state.socialConnections = Array.isArray(payload.data)
+        ? payload.data.map((connection) => ({
+              id: connection.id,
+              provider: connection.provider,
+              facebookPageId: connection.facebook_page_id,
+              facebookPageName: connection.facebook_page_name,
+              instagramBusinessId: connection.instagram_business_id,
+              instagramUsername: connection.instagram_username,
+              supportsFacebook: Boolean(connection.supports_facebook),
+              supportsInstagram: Boolean(connection.supports_instagram)
+          }))
+        : [];
+
+    ensurePublishDraftConnection();
+    renderSocialConnections();
+
+    if (state.currentResult) {
+        renderResult(state.currentResult, state.currentHistoryMeta);
+    }
+};
+
+const tryLoadSocialConnections = async (showErrorToast = false) => {
+    try {
+        await loadSocialConnections();
+    } catch (error) {
+        state.socialConnections = [];
+        renderSocialConnections();
+
+        if (state.currentResult) {
+            renderResult(state.currentResult, state.currentHistoryMeta);
+        }
+
+        if (showErrorToast) {
+            setToast(getErrorMessage(error, 'Não foi possível carregar as redes sociais.'), 'error');
+        }
+    }
+};
+
 const loadHistoryPage = async (page = 1) => {
     if (!state.user) {
         resetHistoryState();
@@ -747,6 +1027,7 @@ const handleLoginSubmit = async (event) => {
         }
 
         await loadCurrentUser();
+        await tryLoadSocialConnections(true);
         await loadHistoryPage(1);
         setCurrentView('generate');
         event.currentTarget.reset();
@@ -786,6 +1067,7 @@ const handleRegisterSubmit = async (event) => {
 
         if (data.session?.user) {
             await loadCurrentUser();
+            await tryLoadSocialConnections(true);
             await loadHistoryPage(1);
             setCurrentView('generate');
             setToast('Conta criada com sucesso.');
@@ -825,6 +1107,66 @@ const handleGoogleAuth = async () => {
     }
 };
 
+const handleMetaConnect = async () => {
+    try {
+        setLoading(elements.connectMetaButton, true, 'Conectando...');
+        const payload = await apiRequest('/api/social/meta/connect', {
+            method: 'POST'
+        });
+
+        if (!payload?.data?.authorizationUrl) {
+            throw new Error('A URL de autorização da Meta não foi retornada.');
+        }
+
+        window.location.href = payload.data.authorizationUrl;
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível iniciar a conexão com a Meta.'), 'error');
+        setLoading(elements.connectMetaButton, false);
+    }
+};
+
+const handleRefreshSocialConnections = async () => {
+    try {
+        setLoading(elements.refreshSocialButton, true, 'Atualizando...');
+        await apiRequest('/api/social/connections/refresh', {
+            method: 'POST'
+        });
+        await loadSocialConnections();
+        setToast('Redes sociais atualizadas com sucesso.');
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível atualizar as redes conectadas.'), 'error');
+    } finally {
+        setLoading(elements.refreshSocialButton, false);
+    }
+};
+
+const handleDisconnectMeta = async () => {
+    try {
+        setLoading(elements.disconnectMetaButton, true, 'Desconectando...');
+        await apiRequest('/api/social/connections?provider=meta', {
+            method: 'DELETE'
+        });
+        state.socialConnections = [];
+        state.publishDraft = {
+            connectionId: '',
+            facebook: true,
+            instagram: false,
+            mediaUrl: ''
+        };
+        renderSocialConnections();
+
+        if (state.currentResult) {
+            renderResult(state.currentResult, state.currentHistoryMeta);
+        }
+
+        setToast('Conexão Meta removida.');
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível desconectar a Meta.'), 'error');
+    } finally {
+        setLoading(elements.disconnectMetaButton, false);
+    }
+};
+
 const handleLogout = async () => {
     try {
         const client = ensureSupabaseClient();
@@ -838,6 +1180,14 @@ const handleLogout = async () => {
 
         updateAuthenticatedState(null);
         state.currentRequestContext = null;
+        state.socialConnections = [];
+        state.publishState.results = [];
+        state.publishDraft = {
+            connectionId: '',
+            facebook: true,
+            instagram: false,
+            mediaUrl: ''
+        };
         resetHistoryState();
         renderResult(null);
         setCurrentView('dashboard');
@@ -846,6 +1196,91 @@ const handleLogout = async () => {
         setToast(getErrorMessage(error, 'Não foi possível sair agora.'), 'error');
     } finally {
         setLoading(elements.logoutButton, false);
+    }
+};
+
+const handlePublishSelected = async () => {
+    if (!state.currentResult) {
+        setToast('Gere ou reabra um conteúdo antes de publicar.', 'error');
+        return;
+    }
+
+    const selectedConnection = ensurePublishDraftConnection();
+
+    if (!selectedConnection) {
+        setToast('Conecte uma conta Meta antes de publicar.', 'error');
+        return;
+    }
+
+    const targets = [];
+
+    if (state.publishDraft.facebook && selectedConnection.supportsFacebook) {
+        targets.push('facebook');
+    }
+
+    if (state.publishDraft.instagram && selectedConnection.supportsInstagram) {
+        targets.push('instagram');
+    }
+
+    if (!targets.length) {
+        setToast('Selecione Facebook, Instagram ou ambos para publicar.', 'error');
+        return;
+    }
+
+    if (targets.includes('instagram') && !state.publishDraft.mediaUrl.trim()) {
+        setToast('Para Instagram, informe uma URL pública de imagem.', 'error');
+        return;
+    }
+
+    try {
+        state.publishState.isLoading = true;
+        state.publishState.results = [];
+        renderResult(state.currentResult, state.currentHistoryMeta);
+
+        const payload = await apiRequest('/api/social/publish', {
+            method: 'POST',
+            body: {
+                connectionId: selectedConnection.id,
+                targets,
+                mediaUrl: state.publishDraft.mediaUrl.trim() || undefined,
+                captionText: state.currentResult.description,
+                generationHistoryId: state.currentHistoryMeta?.historyId || undefined
+            }
+        });
+
+        state.publishState.results = (payload?.data?.publications || []).map((publication) => ({
+            networkLabel:
+                publication.network === 'instagram'
+                    ? 'Instagram'
+                    : publication.network === 'facebook'
+                    ? 'Facebook'
+                    : publication.network,
+            status: publication.status || 'success',
+            message:
+                publication.network === 'instagram'
+                    ? 'Post enviado para o Instagram com sucesso.'
+                    : 'Post enviado para o Facebook com sucesso.'
+        }));
+
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        setToast(
+            targets.length === 2
+                ? 'Post enviado para Facebook e Instagram.'
+                : `Post enviado para ${targets[0] === 'instagram' ? 'Instagram' : 'Facebook'}.`
+        );
+    } catch (error) {
+        state.publishState.results = [
+            {
+                networkLabel: 'Publicação',
+                status: 'error',
+                message: getErrorMessage(error, 'Não foi possível publicar agora.')
+            }
+        ];
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        setToast(getErrorMessage(error, 'Não foi possível publicar agora.'), 'error');
+    } finally {
+        state.publishState.isLoading = false;
+        renderResult(state.currentResult, state.currentHistoryMeta);
     }
 };
 
@@ -895,6 +1330,7 @@ const handleRefreshProfile = async () => {
     try {
         setLoading(elements.refreshProfileButton, true, 'Atualizando...');
         await loadCurrentUser();
+        await tryLoadSocialConnections(true);
         await loadHistoryPage(state.history.page);
         setToast('Perfil atualizado.');
     } catch (error) {
@@ -1032,6 +1468,7 @@ const handleGenerateSubmit = async (event) => {
 
     try {
         setLoading(elements.generateButton, true, 'Gerando...');
+        state.publishState.results = [];
         state.currentRequestContext = requestContext;
         const result = await requestGeneration(requestContext, {
             optionCount: getRequestedOptionCount(false)
@@ -1056,9 +1493,45 @@ const handleGenerateSubmit = async (event) => {
 };
 
 const handleResultAction = async (event) => {
+    const connectionSelect = event.target.closest('[data-publish-connection-select]');
+    const facebookCheckbox = event.target.closest('[data-publish-facebook]');
+    const instagramCheckbox = event.target.closest('[data-publish-instagram]');
+    const mediaUrlInput = event.target.closest('[data-publish-media-url]');
+    const publishTrigger = event.target.closest('[data-publish-selected]');
     const selectTrigger = event.target.closest('[data-option-select]');
     const regenerateTrigger = event.target.closest('[data-option-regenerate]');
     const regenerateAllTrigger = event.target.closest('[data-options-regenerate-all]');
+
+    if (connectionSelect) {
+        state.publishDraft.connectionId = connectionSelect.value;
+        ensurePublishDraftConnection();
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        return;
+    }
+
+    if (facebookCheckbox) {
+        state.publishDraft.facebook = facebookCheckbox.checked;
+        ensurePublishDraftConnection();
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        return;
+    }
+
+    if (instagramCheckbox) {
+        state.publishDraft.instagram = instagramCheckbox.checked;
+        ensurePublishDraftConnection();
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        return;
+    }
+
+    if (mediaUrlInput) {
+        state.publishDraft.mediaUrl = mediaUrlInput.value;
+        return;
+    }
+
+    if (publishTrigger) {
+        await handlePublishSelected();
+        return;
+    }
 
     if (!selectTrigger && !regenerateTrigger && !regenerateAllTrigger) {
         return;
@@ -1154,6 +1627,7 @@ const openHistoryEntry = async (historyId) => {
         }
 
         const entry = mapHistoryRow(data);
+        state.publishState.results = [];
         state.currentRequestContext = createRequestContextFromHistoryRequest(entry.request);
         setCurrentView('history');
         renderResult(entry.response, {
@@ -1180,12 +1654,34 @@ const registerAuthListener = () => {
             await loadCurrentUser();
 
             if (state.user) {
+                await tryLoadSocialConnections(true);
                 await loadHistoryPage(1);
             } else {
+                await tryLoadSocialConnections(false);
                 resetHistoryState();
             }
         }, 0);
     });
+};
+
+const consumeSocialRedirectState = () => {
+    const currentUrl = new URL(window.location.href);
+    const socialStatus = currentUrl.searchParams.get('social_status');
+    const socialMessage = currentUrl.searchParams.get('social_message');
+
+    if (!socialStatus && !socialMessage) {
+        return;
+    }
+
+    if (socialMessage) {
+        setToast(socialMessage, socialStatus === 'connected' ? 'success' : 'error');
+    }
+
+    currentUrl.searchParams.delete('social_status');
+    currentUrl.searchParams.delete('social_message');
+    const nextSearch = currentUrl.searchParams.toString();
+    const nextUrl = `${currentUrl.pathname}${nextSearch ? `?${nextSearch}` : ''}${currentUrl.hash}`;
+    window.history.replaceState({}, '', nextUrl);
 };
 
 const wireEvents = () => {
@@ -1216,6 +1712,9 @@ const wireEvents = () => {
     elements.profileForm.addEventListener('submit', handleProfileUpdate);
     elements.googleLoginButton.addEventListener('click', handleGoogleAuth);
     elements.googleRegisterButton.addEventListener('click', handleGoogleAuth);
+    elements.connectMetaButton.addEventListener('click', handleMetaConnect);
+    elements.refreshSocialButton.addEventListener('click', handleRefreshSocialConnections);
+    elements.disconnectMetaButton.addEventListener('click', handleDisconnectMeta);
     elements.logoutButton.addEventListener('click', handleLogout);
     elements.subscriptionToggleButton.addEventListener('click', handleSubscriptionToggle);
     elements.refreshProfileButton.addEventListener('click', handleRefreshProfile);
@@ -1252,10 +1751,13 @@ const wireEvents = () => {
     });
     elements.resultSlots.forEach((slot) => {
         slot.addEventListener('click', handleResultAction);
+        slot.addEventListener('change', handleResultAction);
+        slot.addEventListener('input', handleResultAction);
     });
 };
 
 const bootstrap = async () => {
+    consumeSocialRedirectState();
     syncHistoryLimit();
     renderDeploymentNotice();
     renderView();
@@ -1266,6 +1768,7 @@ const bootstrap = async () => {
     wireEvents();
     registerAuthListener();
     await loadCurrentUser();
+    await tryLoadSocialConnections(false);
 
     if (state.user) {
         await loadHistoryPage(1);

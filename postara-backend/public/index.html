@@ -340,9 +340,33 @@
                         <section class="panel account-guide-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Planos</p>
-                                    <h3>Como o fluxo funciona</h3>
+                                    <p class="panel-kicker">Redes sociais</p>
+                                    <h3>Conexões e envio</h3>
                                 </div>
+                            </div>
+
+                            <div class="stack">
+                                <div class="stack-inline">
+                                    <button class="button button-primary" id="connect-meta-button" type="button">
+                                        Conectar Instagram/Facebook
+                                    </button>
+                                    <button class="button button-ghost" id="refresh-social-button" type="button">
+                                        Atualizar redes
+                                    </button>
+                                    <button class="button button-ghost" id="disconnect-meta-button" type="button">
+                                        Desconectar Meta
+                                    </button>
+                                </div>
+
+                                <div class="empty-state" id="social-empty-state">
+                                    Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.
+                                </div>
+
+                                <div class="social-connections-list" id="social-connections-list"></div>
+
+                                <p class="hint">
+                                    Facebook aceita texto. Instagram exige uma URL pública de imagem para publicar.
+                                </p>
                             </div>
 
                             <div class="guide-list">
@@ -357,6 +381,10 @@
                                 <article class="guide-card">
                                     <h4>Histórico</h4>
                                     <p>Ao autenticar, cada geração fica salva para reabrir e reaproveitar depois.</p>
+                                </article>
+                                <article class="guide-card">
+                                    <h4>Publicação</h4>
+                                    <p>Depois de conectar a Meta, o app pode enviar o texto escolhido para Facebook, Instagram ou ambos.</p>
                                 </article>
                             </div>
                         </section>

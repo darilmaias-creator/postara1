@@ -279,6 +279,10 @@ button {
     gap: 10px;
 }
 
+.stack-inline.centered {
+    align-items: center;
+}
+
 .field {
     display: grid;
     gap: 8px;
@@ -462,6 +466,78 @@ button {
     padding: 18px;
     border: 1px dashed var(--border);
     border-radius: 14px;
+}
+
+.social-connections-list,
+.publish-status-list {
+    display: grid;
+    gap: 12px;
+}
+
+.social-connection-card,
+.publish-panel {
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.social-connection-card {
+    display: grid;
+    gap: 10px;
+}
+
+.social-connection-title {
+    margin: 0;
+    font-size: 18px;
+}
+
+.social-connection-copy {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.checkbox-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.checkbox-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.checkbox-chip input {
+    margin: 0;
+}
+
+.publish-panel {
+    display: grid;
+    gap: 14px;
+}
+
+.publish-status-item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.publish-status-item.is-success {
+    border-color: rgba(43, 182, 115, 0.38);
+}
+
+.publish-status-item.is-error {
+    border-color: rgba(255, 107, 107, 0.38);
 }
 
 .result-view {
