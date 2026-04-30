@@ -118,6 +118,12 @@ button {
     gap: 10px;
 }
 
+.nav-account-summary {
+    margin-top: 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
 .nav-link {
     display: grid;
     gap: 4px;
@@ -149,11 +155,6 @@ button {
 .nav-link-copy {
     font-size: 13px;
     color: var(--muted);
-}
-
-.sidebar-status {
-    display: grid;
-    gap: 12px;
 }
 
 .account-summary {
