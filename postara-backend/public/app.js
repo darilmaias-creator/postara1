@@ -58,8 +58,6 @@ localStorage.removeItem('postara.auth.token');
 // Centralizamos os seletores para deixar a manutenção da SPA simples conforme o layout evolui.
 const elements = {
     toast: document.getElementById('toast'),
-    planBadge: document.getElementById('plan-badge'),
-    sidebarUserName: document.getElementById('sidebar-user-name'),
     deploymentNotice: document.getElementById('deployment-notice'),
     viewTitle: document.getElementById('view-title'),
     viewDescription: document.getElementById('view-description'),
@@ -401,9 +399,6 @@ const renderAuthView = () => {
 
     elements.guestAuthView.hidden = isAuthenticated;
     elements.memberAuthView.hidden = !isAuthenticated;
-    elements.planBadge.textContent = isAuthenticated
-        ? `Plano ${state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'}`
-        : 'Plano Free';
 
     if (!isAuthenticated) {
         const showingLogin = state.currentAuthTab === 'login';
