@@ -474,6 +474,56 @@ button {
     font-size: 28px;
 }
 
+.result-actions,
+.option-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.option-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.option-card {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.option-card.is-active {
+    border-color: rgba(124, 140, 255, 0.42);
+    background: rgba(124, 140, 255, 0.08);
+}
+
+.option-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.option-card h5 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.option-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.option-status {
+    font-size: 13px;
+    color: var(--text);
+}
+
 .result-block {
     display: grid;
     gap: 8px;

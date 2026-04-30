@@ -42,7 +42,13 @@ const state = {
     currentAuthTab: 'login',
     currentView: 'dashboard',
     currentResult: null,
+    currentRequestContext: null,
     currentHistoryMeta: null,
+    resultActionState: {
+        isLoading: false,
+        scope: null,
+        optionIndex: null
+    },
     history: {
         entries: [],
         page: 1,
@@ -116,6 +122,99 @@ const formatDateTime = (isoDate) =>
         dateStyle: 'short',
         timeStyle: 'short'
     }).format(new Date(isoDate));
+
+const buildPostReadyText = (option) =>
+    [String(option?.caption || '').trim(), String(option?.cta || '').trim(), (option?.hashtags || []).join(' ').trim()]
+        .filter(Boolean)
+        .join('\n\n');
+
+const getResultOptions = (result) => {
+    if (!result) {
+        return [];
+    }
+
+    if (Array.isArray(result.options) && result.options.length > 0) {
+        return result.options.map((option) => ({
+            ...option,
+            description: option.description || buildPostReadyText(option)
+        }));
+    }
+
+    return [
+        {
+            title: result.title || '',
+            caption: result.caption || '',
+            cta: result.cta || '',
+            hashtags: Array.isArray(result.hashtags) ? result.hashtags : [],
+            description: result.description || buildPostReadyText(result)
+        }
+    ];
+};
+
+const normalizeResultShape = (result) => {
+    if (!result) {
+        return null;
+    }
+
+    const options = getResultOptions(result);
+    const safeIndex = Math.max(
+        0,
+        Math.min(Number.isInteger(result.selectedOptionIndex) ? result.selectedOptionIndex : 0, options.length - 1)
+    );
+    const selectedOption = options[safeIndex];
+
+    return {
+        ...result,
+        ...selectedOption,
+        options,
+        selectedOptionIndex: safeIndex,
+        optionCount: options.length,
+        description: selectedOption.description || buildPostReadyText(selectedOption)
+    };
+};
+
+const applySelectedOption = (result, selectedOptionIndex) => {
+    const normalizedResult = normalizeResultShape(result);
+
+    if (!normalizedResult) {
+        return null;
+    }
+
+    const safeIndex = Math.max(0, Math.min(selectedOptionIndex, normalizedResult.options.length - 1));
+    const selectedOption = normalizedResult.options[safeIndex];
+
+    return {
+        ...normalizedResult,
+        ...selectedOption,
+        selectedOptionIndex: safeIndex,
+        optionCount: normalizedResult.options.length,
+        description: selectedOption.description || buildPostReadyText(selectedOption)
+    };
+};
+
+const getRequestedOptionCount = (forceSingle = false) => {
+    if (state.user?.subscriptionPlan !== 'premium') {
+        return 1;
+    }
+
+    return forceSingle ? 1 : 3;
+};
+
+const createRequestContextFromFormData = (formData) => ({
+    productName: String(formData.get('productName') || '').trim(),
+    productFeatures: String(formData.get('productFeatures') || '').trim() || undefined,
+    targetAudience: String(formData.get('targetAudience') || '').trim() || undefined,
+    tone: String(formData.get('tone') || '').trim() || undefined,
+    generationMode: elements.generationModeSelect.value || 'short'
+});
+
+const createRequestContextFromHistoryRequest = (request = {}) => ({
+    productName: String(request.productName || '').trim(),
+    productFeatures: String(request.productFeatures || '').trim() || undefined,
+    targetAudience: String(request.targetAudience || '').trim() || undefined,
+    tone: String(request.tone || '').trim() || undefined,
+    generationMode: request.requestedGenerationMode || request.appliedGenerationMode || 'short'
+});
 
 const setToast = (message, type = 'success') => {
     elements.toast.textContent = message;
@@ -328,20 +427,25 @@ const getResultMarkup = (result, meta = null) => {
         `;
     }
 
+    const normalizedResult = normalizeResultShape(result);
+    const selectedOption = normalizedResult.options[normalizedResult.selectedOptionIndex];
     const badges = [
-        `Plano ${result.subscriptionPlan}`,
-        `Modo ${result.generationMode}`,
-        `${result.source} • ${result.model}`,
-        result.fallbackUsed ? 'Fallback ativo' : 'Primário ativo'
+        `Plano ${normalizedResult.subscriptionPlan}`,
+        `Modo ${normalizedResult.generationMode}`,
+        `${normalizedResult.source} • ${normalizedResult.model}`,
+        normalizedResult.fallbackUsed ? 'Fallback ativo' : 'Primário ativo'
     ];
 
-    if (result.modeAdjusted) {
+    if (normalizedResult.modeAdjusted) {
         badges.push('Modo ajustado pela regra do plano');
     }
 
     if (meta?.historyId) {
         badges.push(`Histórico ${meta.historyId.slice(0, 8)}`);
     }
+
+    const isLoadingResultAction = state.resultActionState.isLoading;
+    const hasMultipleOptions = normalizedResult.options.length > 1;
 
     return `
         <article class="result-view">
@@ -350,26 +454,89 @@ const getResultMarkup = (result, meta = null) => {
                     .map((badge) => `<span class="badge badge-muted">${escapeHtml(badge)}</span>`)
                     .join('')}
             </div>
-            <h3>${escapeHtml(result.title)}</h3>
+            ${
+                hasMultipleOptions
+                    ? `
+                        <div class="result-block">
+                            <h4>Opções criadas pela IA</h4>
+                            <div class="option-grid">
+                                ${normalizedResult.options
+                                    .map(
+                                        (option, index) => `
+                                            <article class="option-card ${
+                                                index === normalizedResult.selectedOptionIndex ? 'is-active' : ''
+                                            }">
+                                                <div class="option-card-head">
+                                                    <span class="badge ${
+                                                        index === normalizedResult.selectedOptionIndex ? '' : 'badge-muted'
+                                                    }">Opção ${index + 1}</span>
+                                                    ${
+                                                        index === normalizedResult.selectedOptionIndex
+                                                            ? '<span class="option-status">Selecionada</span>'
+                                                            : ''
+                                                    }
+                                                </div>
+                                                <h5>${escapeHtml(option.title)}</h5>
+                                                <p>${escapeHtml(option.caption.slice(0, 150))}${
+                                                    option.caption.length > 150 ? '…' : ''
+                                                }</p>
+                                                <div class="option-card-actions">
+                                                    <button
+                                                        class="button ${index === normalizedResult.selectedOptionIndex ? '' : 'button-ghost'}"
+                                                        type="button"
+                                                        data-option-select="${index}"
+                                                        ${isLoadingResultAction ? 'disabled' : ''}
+                                                    >
+                                                        ${index === normalizedResult.selectedOptionIndex ? 'Em uso' : 'Usar opção'}
+                                                    </button>
+                                                    <button
+                                                        class="button button-ghost"
+                                                        type="button"
+                                                        data-option-regenerate="${index}"
+                                                        ${isLoadingResultAction ? 'disabled' : ''}
+                                                    >
+                                                        Refazer esta
+                                                    </button>
+                                                </div>
+                                            </article>
+                                        `
+                                    )
+                                    .join('')}
+                            </div>
+                            <div class="result-actions">
+                                <button
+                                    class="button button-ghost"
+                                    type="button"
+                                    data-options-regenerate-all="true"
+                                    ${isLoadingResultAction ? 'disabled' : ''}
+                                >
+                                    Refazer as 3 opções
+                                </button>
+                            </div>
+                        </div>
+                    `
+                    : ''
+            }
+            <h3>${escapeHtml(selectedOption.title)}</h3>
             <div class="result-block">
                 <h4>Legenda</h4>
-                <p>${escapeHtml(result.caption)}</p>
+                <p>${escapeHtml(selectedOption.caption)}</p>
             </div>
             <div class="result-block">
                 <h4>CTA</h4>
-                <p>${escapeHtml(result.cta)}</p>
+                <p>${escapeHtml(selectedOption.cta)}</p>
             </div>
             <div class="result-block">
                 <h4>Hashtags</h4>
                 <div class="tag-list">
-                    ${result.hashtags
+                    ${selectedOption.hashtags
                         .map((hashtag) => `<span class="tag">${escapeHtml(hashtag)}</span>`)
                         .join('')}
                 </div>
             </div>
             <div class="result-block">
-                <h4>Descrição completa</h4>
-                <pre>${escapeHtml(result.description)}</pre>
+                <h4>Texto pronto para postar</h4>
+                <pre>${escapeHtml(selectedOption.description || buildPostReadyText(selectedOption))}</pre>
             </div>
         </article>
     `;
@@ -377,10 +544,10 @@ const getResultMarkup = (result, meta = null) => {
 
 // Renderizamos a mesma resposta em slots diferentes para reaproveitar o preview nas áreas de geração e histórico.
 const renderResult = (result, meta = null) => {
-    state.currentResult = result;
+    state.currentResult = normalizeResultShape(result);
     state.currentHistoryMeta = meta;
 
-    const markup = getResultMarkup(result, meta);
+    const markup = getResultMarkup(state.currentResult, meta);
     elements.resultSlots.forEach((slot) => {
         slot.innerHTML = markup;
     });
@@ -670,6 +837,7 @@ const handleLogout = async () => {
         }
 
         updateAuthenticatedState(null);
+        state.currentRequestContext = null;
         resetHistoryState();
         renderResult(null);
         setCurrentView('dashboard');
@@ -780,21 +948,21 @@ const handleProfileUpdate = async (event) => {
     }
 };
 
-const saveGenerationToHistory = async (formData, result) => {
+const saveGenerationToHistory = async (requestContext, result) => {
     if (!state.user) {
         return null;
     }
 
     const client = ensureSupabaseClient();
     const requestSnapshot = {
-        productName: String(formData.get('productName') || ''),
-        productFeatures: String(formData.get('productFeatures') || '') || undefined,
-        targetAudience: String(formData.get('targetAudience') || '') || undefined,
-        tone: String(formData.get('tone') || '') || undefined,
+        productName: requestContext.productName,
+        productFeatures: requestContext.productFeatures ?? undefined,
+        targetAudience: requestContext.targetAudience ?? undefined,
+        tone: requestContext.tone ?? undefined,
         userId: state.user.id,
         sessionId: state.sessionId,
         subscriptionPlan: result.subscriptionPlan,
-        requestedGenerationMode: elements.generationModeSelect.value || undefined,
+        requestedGenerationMode: requestContext.generationMode || undefined,
         appliedGenerationMode: result.generationMode,
         modeAdjusted: result.modeAdjusted
     };
@@ -805,7 +973,7 @@ const saveGenerationToHistory = async (formData, result) => {
             user_id: state.user.id,
             session_id: state.sessionId,
             subscription_plan: result.subscriptionPlan,
-            requested_generation_mode: elements.generationModeSelect.value || null,
+            requested_generation_mode: requestContext.generationMode || null,
             applied_generation_mode: result.generationMode,
             mode_adjusted: result.modeAdjusted,
             product_name: requestSnapshot.productName,
@@ -829,38 +997,146 @@ const saveGenerationToHistory = async (formData, result) => {
     return mapHistoryRow(data);
 };
 
+const requestGeneration = async (requestContext, options = {}) => {
+    const payload = await apiRequest('/api/ai/generate-description', {
+        method: 'POST',
+        body: {
+            productName: requestContext.productName,
+            productFeatures: requestContext.productFeatures,
+            targetAudience: requestContext.targetAudience,
+            tone: requestContext.tone,
+            generationMode: requestContext.generationMode,
+            sessionId: state.sessionId,
+            optionCount: options.optionCount ?? getRequestedOptionCount(false),
+            existingOptions: options.existingOptions
+        }
+    });
+
+    return normalizeResultShape(payload.data);
+};
+
+const persistGeneratedResult = async (requestContext, result) => {
+    if (!state.user) {
+        return null;
+    }
+
+    const historyEntry = await saveGenerationToHistory(requestContext, result);
+    await loadHistoryPage(1);
+    return historyEntry;
+};
+
 const handleGenerateSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const requestContext = createRequestContextFromFormData(formData);
 
     try {
         setLoading(elements.generateButton, true, 'Gerando...');
-        const payload = await apiRequest('/api/ai/generate-description', {
-            method: 'POST',
-            body: {
-                productName: formData.get('productName'),
-                productFeatures: formData.get('productFeatures'),
-                targetAudience: formData.get('targetAudience'),
-                tone: formData.get('tone'),
-                generationMode: elements.generationModeSelect.value,
-                sessionId: state.sessionId
-            }
+        state.currentRequestContext = requestContext;
+        const result = await requestGeneration(requestContext, {
+            optionCount: getRequestedOptionCount(false)
         });
 
         let historyEntry = null;
 
-        if (state.user) {
-            historyEntry = await saveGenerationToHistory(formData, payload.data);
-            await loadHistoryPage(1);
-        }
+        historyEntry = await persistGeneratedResult(requestContext, result);
 
         setCurrentView('generate');
-        renderResult(payload.data, historyEntry ? { historyId: historyEntry.id, createdAt: historyEntry.createdAt } : null);
-        setToast(`Conteúdo gerado via ${payload.data.source}.`);
+        renderResult(result, historyEntry ? { historyId: historyEntry.id, createdAt: historyEntry.createdAt } : null);
+        setToast(
+            result.options.length > 1
+                ? `3 opções criadas via ${result.source}.`
+                : `Conteúdo gerado via ${result.source}.`
+        );
     } catch (error) {
         setToast(getErrorMessage(error, 'Não foi possível gerar o conteúdo.'), 'error');
     } finally {
         setLoading(elements.generateButton, false);
+    }
+};
+
+const handleResultAction = async (event) => {
+    const selectTrigger = event.target.closest('[data-option-select]');
+    const regenerateTrigger = event.target.closest('[data-option-regenerate]');
+    const regenerateAllTrigger = event.target.closest('[data-options-regenerate-all]');
+
+    if (!selectTrigger && !regenerateTrigger && !regenerateAllTrigger) {
+        return;
+    }
+
+    if (selectTrigger) {
+        const selectedIndex = Number(selectTrigger.dataset.optionSelect);
+        renderResult(applySelectedOption(state.currentResult, selectedIndex), state.currentHistoryMeta);
+        return;
+    }
+
+    if (!state.currentResult || !state.currentRequestContext) {
+        setToast('Abra ou gere um conteúdo antes de pedir uma nova variação.', 'error');
+        return;
+    }
+
+    const currentResult = normalizeResultShape(state.currentResult);
+    const currentRequestContext = {
+        ...state.currentRequestContext,
+        generationMode: state.currentRequestContext.generationMode || currentResult.generationMode
+    };
+
+    try {
+        const isSingleRegeneration = Boolean(regenerateTrigger);
+        const optionIndex = isSingleRegeneration ? Number(regenerateTrigger.dataset.optionRegenerate) : null;
+
+        state.resultActionState = {
+            isLoading: true,
+            scope: isSingleRegeneration ? 'single' : 'all',
+            optionIndex
+        };
+        renderResult(currentResult, state.currentHistoryMeta);
+
+        const regeneratedResult = await requestGeneration(currentRequestContext, {
+            optionCount: getRequestedOptionCount(isSingleRegeneration),
+            existingOptions: currentResult.options
+        });
+
+        let nextResult = regeneratedResult;
+
+        if (isSingleRegeneration) {
+            const safeOptionIndex = Math.max(0, Math.min(optionIndex, currentResult.options.length - 1));
+            const mergedOptions = currentResult.options.map((option, index) =>
+                index === safeOptionIndex ? regeneratedResult.options[0] : option
+            );
+
+            nextResult = applySelectedOption(
+                {
+                    ...currentResult,
+                    ...regeneratedResult,
+                    options: mergedOptions
+                },
+                safeOptionIndex
+            );
+        }
+
+        state.currentRequestContext = currentRequestContext;
+        const historyEntry = await persistGeneratedResult(currentRequestContext, nextResult);
+
+        renderResult(nextResult, historyEntry ? { historyId: historyEntry.id, createdAt: historyEntry.createdAt } : null);
+        setCurrentView('generate');
+        setToast(
+            isSingleRegeneration
+                ? `Opção ${optionIndex + 1} refeita com sucesso.`
+                : 'As 3 opções foram recriadas com sucesso.'
+        );
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível refazer essa opção agora.'), 'error');
+    } finally {
+        state.resultActionState = {
+            isLoading: false,
+            scope: null,
+            optionIndex: null
+        };
+
+        if (state.currentResult) {
+            renderResult(state.currentResult, state.currentHistoryMeta);
+        }
     }
 };
 
@@ -878,6 +1154,7 @@ const openHistoryEntry = async (historyId) => {
         }
 
         const entry = mapHistoryRow(data);
+        state.currentRequestContext = createRequestContextFromHistoryRequest(entry.request);
         setCurrentView('history');
         renderResult(entry.response, {
             historyId: entry.id,
@@ -972,6 +1249,9 @@ const wireEvents = () => {
         }
 
         openHistoryEntry(trigger.dataset.historyOpen);
+    });
+    elements.resultSlots.forEach((slot) => {
+        slot.addEventListener('click', handleResultAction);
     });
 };
 
