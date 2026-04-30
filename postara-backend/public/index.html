@@ -33,15 +33,8 @@
                 </button>
                 <button class="nav-link" data-view-target="account" type="button">
                     <span class="nav-link-label">Conta</span>
-                    <span class="nav-link-copy">Entrar e gerenciar plano</span>
+                    <span class="nav-link-copy" id="account-nav-summary">Entrar e gerenciar plano</span>
                 </button>
-                <div class="nav-account-summary">
-                    <p class="panel-kicker">Conta atual</p>
-                    <div class="account-summary">
-                        <p class="account-summary-name" id="sidebar-user-name">Visitante</p>
-                        <span class="badge" id="plan-badge">Plano Free</span>
-                    </div>
-                </div>
             </nav>
         </aside>
 
@@ -308,6 +301,21 @@
                                     </div>
                                 </div>
 
+                                <form class="stack" id="profile-form">
+                                    <label class="field">
+                                        <span>Nome de exibição</span>
+                                        <input
+                                            type="text"
+                                            id="profile-name-input"
+                                            name="name"
+                                            placeholder="Como você quer aparecer no app"
+                                        />
+                                    </label>
+                                    <button class="button button-primary" id="save-profile-button" type="submit">
+                                        Salvar nome
+                                    </button>
+                                </form>
+
                                 <div class="stack-inline">
                                     <button class="button" id="subscription-toggle-button" type="button">
                                         Alterar assinatura
@@ -321,6 +329,10 @@
                                 <p class="hint">
                                     O botão de assinatura atualiza o plano salvo no Supabase para validar os fluxos
                                     `free` e `premium` durante os testes.
+                                </p>
+                                <p class="hint">
+                                    A exclusão completa da conta é o próximo passo seguro, porque no Supabase ela exige
+                                    ação server-side com chave protegida.
                                 </p>
                             </div>
                         </section>

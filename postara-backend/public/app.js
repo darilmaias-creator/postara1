@@ -65,6 +65,7 @@ const elements = {
     viewDescription: document.getElementById('view-description'),
     viewButtons: [...document.querySelectorAll('[data-view-target]')],
     goViewButtons: [...document.querySelectorAll('[data-go-view]')],
+    accountNavSummary: document.getElementById('account-nav-summary'),
     views: [...document.querySelectorAll('[data-view]')],
     resultSlots: [...document.querySelectorAll('[data-result-slot]')],
     dashboardAuthStatus: document.getElementById('dashboard-auth-status'),
@@ -77,6 +78,9 @@ const elements = {
     showRegisterTab: document.getElementById('show-register-tab'),
     loginForm: document.getElementById('login-form'),
     registerForm: document.getElementById('register-form'),
+    profileForm: document.getElementById('profile-form'),
+    profileNameInput: document.getElementById('profile-name-input'),
+    saveProfileButton: document.getElementById('save-profile-button'),
     googleLoginButton: document.getElementById('google-login-button'),
     googleRegisterButton: document.getElementById('google-register-button'),
     googleRegisterDivider: document.getElementById('google-register-divider'),
@@ -400,7 +404,6 @@ const renderAuthView = () => {
     elements.planBadge.textContent = isAuthenticated
         ? `Plano ${state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'}`
         : 'Plano Free';
-    elements.sidebarUserName.textContent = isAuthenticated ? state.user.name || state.user.email : 'Visitante';
 
     if (!isAuthenticated) {
         const showingLogin = state.currentAuthTab === 'login';
@@ -411,6 +414,7 @@ const renderAuthView = () => {
         elements.googleLoginButton.hidden = !showingLogin;
         elements.googleRegisterButton.hidden = showingLogin;
         elements.googleRegisterDivider.hidden = showingLogin;
+        elements.accountNavSummary.textContent = 'Entrar e gerenciar plano';
         applyPlanToModeSelector();
         renderDashboard();
         return;
@@ -420,6 +424,10 @@ const renderAuthView = () => {
     elements.memberEmail.textContent = state.user.email;
     elements.memberPlanBadge.textContent = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
     elements.memberIdBadge.textContent = `ID ${state.user.id.slice(0, 8)}`;
+    elements.accountNavSummary.textContent = `${state.user.name || state.user.email} - ${
+        state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'
+    }`;
+    elements.profileNameInput.value = state.user.name || '';
     elements.subscriptionToggleButton.textContent =
         state.user.subscriptionPlan === 'premium' ? 'Voltar para Free' : 'Ir para Premium';
 
@@ -739,6 +747,50 @@ const handleRefreshProfile = async () => {
     }
 };
 
+const handleProfileUpdate = async (event) => {
+    event.preventDefault();
+
+    if (!state.user) {
+        return;
+    }
+
+    try {
+        const client = ensureSupabaseClient();
+        setLoading(elements.saveProfileButton, true, 'Salvando...');
+
+        const name = elements.profileNameInput.value.trim();
+
+        const { data, error } = await client
+            .from('profiles')
+            .update({
+                name: name || null
+            })
+            .eq('id', state.user.id)
+            .select('id, name, email, subscription_plan, created_at, updated_at')
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        updateAuthenticatedState(
+            mapProfileToUser(data, {
+                id: data.id,
+                email: data.email,
+                created_at: data.created_at,
+                user_metadata: {
+                    name: data.name
+                }
+            })
+        );
+        setToast('Nome atualizado com sucesso.');
+    } catch (error) {
+        setToast(getErrorMessage(error, 'Não foi possível atualizar o nome.'), 'error');
+    } finally {
+        setLoading(elements.saveProfileButton, false);
+    }
+};
+
 const saveGenerationToHistory = async (formData, result) => {
     if (!state.user) {
         return null;
@@ -895,6 +947,7 @@ const wireEvents = () => {
 
     elements.loginForm.addEventListener('submit', handleLoginSubmit);
     elements.registerForm.addEventListener('submit', handleRegisterSubmit);
+    elements.profileForm.addEventListener('submit', handleProfileUpdate);
     elements.googleLoginButton.addEventListener('click', handleGoogleAuth);
     elements.googleRegisterButton.addEventListener('click', handleGoogleAuth);
     elements.logoutButton.addEventListener('click', handleLogout);

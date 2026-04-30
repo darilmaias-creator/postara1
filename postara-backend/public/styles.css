@@ -118,12 +118,6 @@ button {
     gap: 10px;
 }
 
-.nav-account-summary {
-    margin-top: 8px;
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
-}
-
 .nav-link {
     display: grid;
     gap: 4px;
