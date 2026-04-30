@@ -59,7 +59,7 @@ localStorage.removeItem('postara.auth.token');
 const elements = {
     toast: document.getElementById('toast'),
     planBadge: document.getElementById('plan-badge'),
-    sessionBadge: document.getElementById('session-badge'),
+    sidebarUserName: document.getElementById('sidebar-user-name'),
     deploymentNotice: document.getElementById('deployment-notice'),
     viewTitle: document.getElementById('view-title'),
     viewDescription: document.getElementById('view-description'),
@@ -400,9 +400,7 @@ const renderAuthView = () => {
     elements.planBadge.textContent = isAuthenticated
         ? `Plano ${state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'}`
         : 'Plano Free';
-    elements.sessionBadge.textContent = isAuthenticated
-        ? 'Sessão autenticada via Supabase'
-        : 'Sessão local ativa';
+    elements.sidebarUserName.textContent = isAuthenticated ? state.user.name || state.user.email : 'Visitante';
 
     if (!isAuthenticated) {
         const showingLogin = state.currentAuthTab === 'login';

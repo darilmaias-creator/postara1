@@ -156,6 +156,17 @@ button {
     gap: 12px;
 }
 
+.account-summary {
+    display: grid;
+    gap: 12px;
+}
+
+.account-summary-name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
 .workspace {
     display: grid;
     gap: 18px;
