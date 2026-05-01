@@ -54,6 +54,17 @@ module.exports = async (req, res) => {
         const metaProfile = await fetchMetaProfile(tokenBundle.accessToken);
         const rawConnections = await fetchMetaConnections(tokenBundle.accessToken);
 
+        if (!rawConnections.length) {
+            return redirect(
+                res,
+                buildAppRedirect(
+                    req,
+                    'error',
+                    'A Meta aceitou o login, mas não liberou nenhuma Página do Facebook para o app. Na autorização, selecione a página desejada e confirme que sua conta tem acesso total a ela.'
+                )
+            );
+        }
+
         const authAccount = await upsertSocialAuthAccount({
             userId: verifiedState.userId,
             provider: META_PROVIDER,
