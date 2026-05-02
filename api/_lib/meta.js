@@ -117,75 +117,23 @@ const metaGraphPost = async (path, accessToken, body) => {
 
 const fetchMetaProfile = async (userAccessToken) => metaGraphGet('/me?fields=id,name', userAccessToken);
 
-const readInstagramAccountFromPagePayload = (pagePayload) => {
-    const instagramAccount =
-        pagePayload?.instagram_business_account ||
-        pagePayload?.connected_instagram_account ||
-        null;
-
-    return {
-        instagramBusinessId: instagramAccount?.id || null,
-        instagramUsername: instagramAccount?.username || null,
-        supportsInstagram: Boolean(instagramAccount?.id)
-    };
-};
-
-const hydratePageInstagramAccount = async (page, userAccessToken) => {
-    const initialInstagramData = readInstagramAccountFromPagePayload(page);
-
-    if (initialInstagramData.supportsInstagram) {
-        return initialInstagramData;
-    }
-
-    const pageFields =
-        'instagram_business_account{id,username},connected_instagram_account{id,username}';
-
-    try {
-        const pagePayload = await metaGraphGet(`/${page.id}?fields=${pageFields}`, page.access_token);
-        const hydratedInstagramData = readInstagramAccountFromPagePayload(pagePayload);
-
-        if (hydratedInstagramData.supportsInstagram) {
-            return hydratedInstagramData;
-        }
-    } catch (error) {
-        // Se a leitura com token da página falhar, ainda tentamos com o token do usuário.
-    }
-
-    try {
-        const pagePayload = await metaGraphGet(`/${page.id}?fields=${pageFields}`, userAccessToken);
-        return readInstagramAccountFromPagePayload(pagePayload);
-    } catch (error) {
-        return initialInstagramData;
-    }
-};
-
 const fetchMetaConnections = async (userAccessToken) => {
     const payload = await metaGraphGet(
-        '/me/accounts?fields=id,name,access_token,instagram_business_account{id,username},connected_instagram_account{id,username}&limit=100',
+        '/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100',
         userAccessToken
     );
 
-    if (!Array.isArray(payload?.data) || !payload.data.length) {
-        return [];
-    }
-
-    const normalizedConnections = await Promise.all(
-        payload.data.map(async (page) => {
-            const instagramData = await hydratePageInstagramAccount(page, userAccessToken);
-
-            return {
-                facebookPageId: page.id,
-                facebookPageName: page.name,
-                pageAccessToken: page.access_token,
-                instagramBusinessId: instagramData.instagramBusinessId,
-                instagramUsername: instagramData.instagramUsername,
-                supportsFacebook: Boolean(page.id && page.access_token),
-                supportsInstagram: instagramData.supportsInstagram
-            };
-        })
-    );
-
-    return normalizedConnections;
+    return Array.isArray(payload?.data)
+        ? payload.data.map((page) => ({
+              facebookPageId: page.id,
+              facebookPageName: page.name,
+              pageAccessToken: page.access_token,
+              instagramBusinessId: page.instagram_business_account?.id || null,
+              instagramUsername: page.instagram_business_account?.username || null,
+              supportsFacebook: Boolean(page.id && page.access_token),
+              supportsInstagram: Boolean(page.instagram_business_account?.id)
+          }))
+        : [];
 };
 
 const publishToFacebookPage = async ({ pageId, pageAccessToken, message }) =>
