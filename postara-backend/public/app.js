@@ -627,8 +627,26 @@ const canvasToBlob = (canvas, type, quality) =>
 
 const prepareImageForSocial = async (file) => {
     const sourceImage = await loadImageElementFromFile(file);
-    const targetWidth = 1080;
-    const targetHeight = 1350;
+    const minAspectRatio = 4 / 5;
+    const maxAspectRatio = 1.91;
+    const sourceAspectRatio = sourceImage.width / sourceImage.height;
+
+    let sourceCropX = 0;
+    let sourceCropY = 0;
+    let sourceCropWidth = sourceImage.width;
+    let sourceCropHeight = sourceImage.height;
+
+    if (sourceAspectRatio > maxAspectRatio) {
+        sourceCropWidth = Math.round(sourceImage.height * maxAspectRatio);
+        sourceCropX = Math.round((sourceImage.width - sourceCropWidth) / 2);
+    } else if (sourceAspectRatio < minAspectRatio) {
+        sourceCropHeight = Math.round(sourceImage.width / minAspectRatio);
+        sourceCropY = Math.round((sourceImage.height - sourceCropHeight) / 2);
+    }
+
+    const finalAspectRatio = sourceCropWidth / sourceCropHeight;
+    const targetWidth = finalAspectRatio >= 1 ? 1080 : Math.round(1350 * finalAspectRatio);
+    const targetHeight = finalAspectRatio >= 1 ? Math.round(1080 / finalAspectRatio) : 1350;
     const canvas = document.createElement('canvas');
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -639,16 +657,17 @@ const prepareImageForSocial = async (file) => {
         throw new Error('Seu navegador não conseguiu preparar a imagem para postagem.');
     }
 
-    context.fillStyle = '#f3ede5';
-    context.fillRect(0, 0, targetWidth, targetHeight);
-
-    const scale = Math.min(targetWidth / sourceImage.width, targetHeight / sourceImage.height);
-    const drawWidth = sourceImage.width * scale;
-    const drawHeight = sourceImage.height * scale;
-    const offsetX = (targetWidth - drawWidth) / 2;
-    const offsetY = (targetHeight - drawHeight) / 2;
-
-    context.drawImage(sourceImage, offsetX, offsetY, drawWidth, drawHeight);
+    context.drawImage(
+        sourceImage,
+        sourceCropX,
+        sourceCropY,
+        sourceCropWidth,
+        sourceCropHeight,
+        0,
+        0,
+        targetWidth,
+        targetHeight
+    );
 
     const processedBlob = await canvasToBlob(canvas, 'image/jpeg', 0.92);
     const baseName = file.name.replace(/\.[^.]+$/, '') || 'postara-image';
