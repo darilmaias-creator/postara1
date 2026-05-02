@@ -269,7 +269,6 @@ const ensurePublishDraftConnection = () => {
 
     if (!selectedConnection.supportsInstagram) {
         state.publishDraft.instagram = false;
-        resetPublishMediaDraft();
     }
 
     if (!state.publishDraft.facebook && !state.publishDraft.instagram) {
