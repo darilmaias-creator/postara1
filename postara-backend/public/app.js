@@ -477,56 +477,54 @@ const buildPublishPanelMarkup = () => {
                 </label>
             </div>
 
+            <label class="field">
+                <span>Imagem da postagem</span>
+                <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    data-publish-media-file
+                />
+            </label>
+
             ${
-                instagramSelected
+                state.publishDraft.mediaUploadState === 'uploading'
+                    ? '<p class="hint">Enviando imagem para o Postara...</p>'
+                    : ''
+            }
+
+            ${
+                state.publishDraft.mediaPreviewUrl
                     ? `
-                        <label class="field">
-                            <span>Imagem para Instagram</span>
-                            <input
-                                type="file"
-                                accept="image/png,image/jpeg"
-                                data-publish-media-file
+                        <div class="media-preview-card">
+                            <img
+                                class="media-preview-image"
+                                src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
+                                alt="Prévia da imagem escolhida para a postagem"
                             />
-                        </label>
-
-                        ${
-                            state.publishDraft.mediaUploadState === 'uploading'
-                                ? '<p class="hint">Enviando imagem para o Postara...</p>'
-                                : ''
-                        }
-
-                        ${
-                            state.publishDraft.mediaPreviewUrl
-                                ? `
-                                    <div class="media-preview-card">
-                                        <img
-                                            class="media-preview-image"
-                                            src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
-                                            alt="Prévia da imagem escolhida para o Instagram"
-                                        />
-                                        <div class="media-preview-copy">
-                                            <strong>${escapeHtml(
-                                                state.publishDraft.mediaFileName || 'Imagem pronta para publicar'
-                                            )}</strong>
-                                            <p>
-                                                ${escapeHtml(
-                                                    state.publishDraft.mediaUploadState === 'uploaded'
-                                                        ? 'Imagem enviada com sucesso. O Postara já pode usar essa imagem no Instagram.'
-                                                        : 'Imagem selecionada para a publicação.'
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                `
-                                : ''
-                        }
+                            <div class="media-preview-copy">
+                                <strong>${escapeHtml(state.publishDraft.mediaFileName || 'Imagem pronta para publicar')}</strong>
+                                <p>
+                                    ${escapeHtml(
+                                        state.publishDraft.mediaUploadState === 'uploaded'
+                                            ? 'Imagem enviada com sucesso. O Postara já pode reutilizar essa imagem quando o Instagram estiver liberado.'
+                                            : 'Imagem selecionada para a publicação.'
+                                    )}
+                                </p>
+                            </div>
+                        </div>
                     `
                     : ''
             }
 
             <p class="hint">
-                Facebook pode publicar só o texto. Para Instagram, o Postara vai enviar sua imagem e usar o texto pronto selecionado no preview.
+                Facebook pode publicar só o texto. Para Instagram, o Postara usa essa imagem junto com o texto pronto selecionado no preview.
             </p>
+
+            ${
+                !canInstagram
+                    ? '<p class="hint">A imagem já pode ser enviada aqui. O botão do Instagram libera assim que a Meta devolver a conta profissional vinculada.</p>'
+                    : ''
+            }
 
             <button class="button button-primary" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
                 ${state.publishState.isLoading ? 'Postando...' : 'Postar descrição selecionada'}
