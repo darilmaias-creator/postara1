@@ -1,5 +1,7 @@
 const { createErrorResponse, json } = require('../_lib/http');
+const { META_INSTAGRAM_PROVIDER, META_PROVIDER } = require('../_lib/meta');
 const {
+    clearSocialConnectionsForUser,
     disconnectSocialProvider,
     fetchAuthenticatedUser,
     listSocialConnectionsForUser
@@ -31,8 +33,17 @@ module.exports = async (req, res) => {
         }
 
         if (req.method === 'DELETE') {
-            const provider = req.query?.provider || 'meta';
-            await disconnectSocialProvider(user.id, provider);
+            const provider = req.query?.provider || META_PROVIDER;
+
+            if (provider === META_PROVIDER) {
+                await Promise.all([
+                    disconnectSocialProvider(user.id, META_PROVIDER),
+                    disconnectSocialProvider(user.id, META_INSTAGRAM_PROVIDER)
+                ]);
+                await clearSocialConnectionsForUser(user.id);
+            } else {
+                await disconnectSocialProvider(user.id, provider);
+            }
 
             return json(res, 200, {
                 status: 'success',

@@ -1,5 +1,5 @@
 const { getBaseUrl, createErrorResponse, json } = require('../../_lib/http');
-const { buildMetaOAuthUrl } = require('../../_lib/meta');
+const { buildMetaOAuthUrl, META_CONNECTION_TARGETS } = require('../../_lib/meta');
 const { signState } = require('../../_lib/crypto');
 const { fetchAuthenticatedUser } = require('../../_lib/supabase');
 
@@ -26,9 +26,14 @@ module.exports = async (req, res) => {
     try {
         const baseUrl = process.env.POSTARA_PUBLIC_APP_URL || getBaseUrl(req);
         const redirectUri = process.env.META_REDIRECT_URI || `${baseUrl}/api/social/meta/callback`;
+        const requestedTarget =
+            req.query?.target === META_CONNECTION_TARGETS.instagram
+                ? META_CONNECTION_TARGETS.instagram
+                : META_CONNECTION_TARGETS.facebook;
         const state = signState({
             userId: user.id,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            target: requestedTarget
         });
 
         return json(res, 200, {
@@ -36,7 +41,8 @@ module.exports = async (req, res) => {
             data: {
                 authorizationUrl: buildMetaOAuthUrl({
                     redirectUri,
-                    state
+                    state,
+                    target: requestedTarget
                 })
             }
         });

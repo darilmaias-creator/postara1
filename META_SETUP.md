@@ -26,7 +26,8 @@ Adicione estas variáveis no projeto:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `META_APP_ID`
 - `META_APP_SECRET`
-- `META_CONFIG_ID`
+- `META_FACEBOOK_CONFIG_ID`
+- `META_INSTAGRAM_CONFIG_ID`
 - `POSTARA_SOCIAL_SECRET`
 - `POSTARA_PUBLIC_APP_URL=https://postara1.vercel.app`
 
@@ -43,19 +44,24 @@ No app da Meta, configure:
 - `Valid OAuth Redirect URI`:
   - `https://postara1.vercel.app/api/social/meta/callback`
 
-Se o app foi criado com **Facebook Login for Business**, crie também uma configuração de login e copie o:
+Se o app foi criado com **Facebook Login for Business**, crie também:
 
-- `Config ID`
+- um `Config ID` para Facebook
+- um `Config ID` para Instagram
 
-Esse valor vai na variável:
+Esses valores vão nas variáveis:
 
-- `META_CONFIG_ID`
+- `META_FACEBOOK_CONFIG_ID`
+- `META_INSTAGRAM_CONFIG_ID`
 
-Permissões usadas pelo fluxo:
+Permissões usadas no fluxo do Facebook:
 
 - `pages_show_list`
 - `pages_read_engagement`
 - `pages_manage_posts`
+
+Permissões usadas no fluxo do Instagram:
+
 - `instagram_basic`
 - `instagram_content_publish`
 

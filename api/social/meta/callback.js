@@ -1,6 +1,8 @@
 const { encryptText, verifyState } = require('../../_lib/crypto');
 const { createErrorResponse, getBaseUrl, json, redirect } = require('../../_lib/http');
 const {
+    META_CONNECTION_TARGETS,
+    META_INSTAGRAM_PROVIDER,
     META_PROVIDER,
     exchangeCodeForLongLivedToken,
     fetchMetaConnections,
@@ -8,7 +10,7 @@ const {
 } = require('../../_lib/meta');
 const {
     listSocialConnectionsForUser,
-    replaceSocialConnections,
+    mergeSocialConnections,
     upsertSocialAuthAccount
 } = require('../../_lib/supabase');
 
@@ -45,18 +47,25 @@ module.exports = async (req, res) => {
             throw new Error('A tentativa de conexão expirou. Tente conectar novamente.');
         }
 
+        const connectionTarget =
+            verifiedState.target === META_CONNECTION_TARGETS.instagram
+                ? META_CONNECTION_TARGETS.instagram
+                : META_CONNECTION_TARGETS.facebook;
+        const provider =
+            connectionTarget === META_CONNECTION_TARGETS.instagram ? META_INSTAGRAM_PROVIDER : META_PROVIDER;
         const baseUrl = process.env.POSTARA_PUBLIC_APP_URL || getBaseUrl(req);
         const redirectUri = process.env.META_REDIRECT_URI || `${baseUrl}/api/social/meta/callback`;
         const tokenBundle = await exchangeCodeForLongLivedToken({
             code,
-            redirectUri
+            redirectUri,
+            target: connectionTarget
         });
         const metaProfile = await fetchMetaProfile(tokenBundle.accessToken);
         const rawConnections = await fetchMetaConnections(tokenBundle.accessToken);
 
         const authAccount = await upsertSocialAuthAccount({
             userId: verifiedState.userId,
-            provider: META_PROVIDER,
+            provider,
             providerUserId: metaProfile.id,
             providerUserName: metaProfile.name,
             encryptedAccessToken: encryptText(tokenBundle.accessToken),
@@ -66,7 +75,7 @@ module.exports = async (req, res) => {
             grantedScopes: []
         });
 
-        await replaceSocialConnections({
+        await mergeSocialConnections({
             userId: verifiedState.userId,
             provider: META_PROVIDER,
             authAccountId: authAccount.id,
@@ -79,9 +88,14 @@ module.exports = async (req, res) => {
         const connections = await listSocialConnectionsForUser(verifiedState.userId);
         const hasInstagram = connections.some((connection) => connection.supports_instagram);
         const connectionCount = connections.length;
-        const summaryMessage = hasInstagram
-            ? `Conexão Meta concluída com ${connectionCount} página(s) e Instagram disponível.`
-            : `Conexão Meta concluída com ${connectionCount} página(s).`;
+        const summaryMessage =
+            connectionTarget === META_CONNECTION_TARGETS.instagram
+                ? hasInstagram
+                    ? `Instagram conectado. O Postara encontrou ${connectionCount} página(s) e Instagram disponível.`
+                    : `Instagram conectado, mas a Meta ainda não devolveu nenhuma conta profissional vinculada.`
+                : hasInstagram
+                ? `Conexão Meta concluída com ${connectionCount} página(s) e Instagram disponível.`
+                : `Conexão Meta concluída com ${connectionCount} página(s).`;
 
         return redirect(res, buildAppRedirect(req, 'connected', summaryMessage));
     } catch (error) {

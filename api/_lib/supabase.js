@@ -145,6 +145,56 @@ const replaceSocialConnections = async ({ userId, provider, authAccountId, conne
     });
 };
 
+const listSocialConnectionsForUserRaw = async (userId) =>
+    supabaseAdminFetch(
+        `/rest/v1/social_connections?user_id=eq.${encodeURIComponent(userId)}&select=*`
+    );
+
+const mergeSocialConnections = async ({ userId, provider, authAccountId, connections }) => {
+    if (!connections.length) {
+        return [];
+    }
+
+    const existingConnections = await listSocialConnectionsForUserRaw(userId);
+    const existingByPageId = new Map(
+        (existingConnections || []).map((connection) => [connection.facebook_page_id, connection])
+    );
+
+    const nowIso = new Date().toISOString();
+    const mergedConnections = connections.map((connection) => {
+        const existingConnection = existingByPageId.get(connection.facebookPageId);
+
+        return {
+            user_id: userId,
+            auth_account_id: authAccountId,
+            provider,
+            facebook_page_id: connection.facebookPageId,
+            facebook_page_name: connection.facebookPageName,
+            encrypted_page_access_token:
+                connection.encryptedPageAccessToken || existingConnection?.encrypted_page_access_token,
+            instagram_business_id: connection.instagramBusinessId ?? existingConnection?.instagram_business_id ?? null,
+            instagram_username: connection.instagramUsername ?? existingConnection?.instagram_username ?? null,
+            supports_facebook:
+                typeof connection.supportsFacebook === 'boolean'
+                    ? connection.supportsFacebook
+                    : Boolean(existingConnection?.supports_facebook),
+            supports_instagram:
+                typeof connection.supportsInstagram === 'boolean'
+                    ? connection.supportsInstagram
+                    : Boolean(existingConnection?.supports_instagram),
+            last_synced_at: nowIso
+        };
+    });
+
+    return supabaseAdminFetch('/rest/v1/social_connections?on_conflict=user_id,facebook_page_id&select=*', {
+        method: 'POST',
+        headers: {
+            Prefer: 'resolution=merge-duplicates,return=representation'
+        },
+        body: mergedConnections
+    });
+};
+
 const listSocialConnectionsForUser = async (userId) =>
     supabaseAdminFetch(
         `/rest/v1/social_connections?user_id=eq.${encodeURIComponent(
@@ -185,6 +235,14 @@ const disconnectSocialProvider = async (userId, provider) =>
         }
     );
 
+const clearSocialConnectionsForUser = async (userId) =>
+    supabaseAdminFetch(`/rest/v1/social_connections?user_id=eq.${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+        headers: {
+            Prefer: 'return=minimal'
+        }
+    });
+
 const createSocialPublication = async (publication) =>
     supabaseAdminFetch('/rest/v1/social_publications', {
         method: 'POST',
@@ -195,6 +253,7 @@ const createSocialPublication = async (publication) =>
     });
 
 module.exports = {
+    clearSocialConnectionsForUser,
     createSocialPublication,
     disconnectSocialProvider,
     fetchAuthenticatedUser,
@@ -204,6 +263,7 @@ module.exports = {
     getSupabaseServiceRoleKey,
     getSupabaseUrl,
     listSocialConnectionsForUser,
+    mergeSocialConnections,
     replaceSocialConnections,
     supabaseAdminFetch,
     upsertSocialAuthAccount

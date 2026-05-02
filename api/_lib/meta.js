@@ -1,4 +1,5 @@
 const META_PROVIDER = 'meta';
+const META_INSTAGRAM_PROVIDER = 'meta_instagram';
 const DEFAULT_META_API_VERSION = 'v24.0';
 const META_SCOPES = [
     'pages_show_list',
@@ -8,10 +9,18 @@ const META_SCOPES = [
     'instagram_content_publish'
 ];
 
-const getMetaConfig = () => {
+const META_CONNECTION_TARGETS = {
+    facebook: 'facebook',
+    instagram: 'instagram'
+};
+
+const getMetaConfig = (target = META_CONNECTION_TARGETS.facebook) => {
     const appId = process.env.META_APP_ID;
     const appSecret = process.env.META_APP_SECRET;
-    const configId = process.env.META_CONFIG_ID || process.env.META_BUSINESS_LOGIN_CONFIG_ID || '';
+    const configId =
+        target === META_CONNECTION_TARGETS.instagram
+            ? process.env.META_INSTAGRAM_CONFIG_ID || process.env.META_CONFIG_ID || process.env.META_BUSINESS_LOGIN_CONFIG_ID || ''
+            : process.env.META_FACEBOOK_CONFIG_ID || process.env.META_CONFIG_ID || process.env.META_BUSINESS_LOGIN_CONFIG_ID || '';
 
     if (!appId || !appSecret) {
         throw new Error('As variáveis META_APP_ID e META_APP_SECRET precisam ser configuradas.');
@@ -25,8 +34,8 @@ const getMetaConfig = () => {
     };
 };
 
-const buildMetaOAuthUrl = ({ redirectUri, state }) => {
-    const { appId, version, configId } = getMetaConfig();
+const buildMetaOAuthUrl = ({ redirectUri, state, target = META_CONNECTION_TARGETS.facebook }) => {
+    const { appId, version, configId } = getMetaConfig(target);
     const params = new URLSearchParams({
         client_id: appId,
         redirect_uri: redirectUri,
@@ -58,8 +67,8 @@ const readMetaJson = async (response) => {
     return payload;
 };
 
-const exchangeCodeForLongLivedToken = async ({ code, redirectUri }) => {
-    const { appId, appSecret, version } = getMetaConfig();
+const exchangeCodeForLongLivedToken = async ({ code, redirectUri, target = META_CONNECTION_TARGETS.facebook }) => {
+    const { appId, appSecret, version } = getMetaConfig(target);
     const shortLivedTokenResponse = await fetch(
         `https://graph.facebook.com/${version}/oauth/access_token?${new URLSearchParams({
             client_id: appId,
@@ -186,7 +195,9 @@ const publishToInstagramAccount = async ({ instagramBusinessId, pageAccessToken,
 };
 
 module.exports = {
+    META_CONNECTION_TARGETS,
     META_PROVIDER,
+    META_INSTAGRAM_PROVIDER,
     META_SCOPES,
     buildMetaOAuthUrl,
     exchangeCodeForLongLivedToken,

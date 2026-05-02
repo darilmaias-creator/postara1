@@ -1,11 +1,11 @@
 const { decryptText, encryptText } = require('../../_lib/crypto');
 const { createErrorResponse, json } = require('../../_lib/http');
-const { META_PROVIDER, fetchMetaConnections } = require('../../_lib/meta');
+const { META_INSTAGRAM_PROVIDER, META_PROVIDER, fetchMetaConnections } = require('../../_lib/meta');
 const {
     fetchAuthenticatedUser,
     getSocialAuthAccountForUser,
     listSocialConnectionsForUser,
-    replaceSocialConnections
+    mergeSocialConnections
 } = require('../../_lib/supabase');
 
 module.exports = async (req, res) => {
@@ -29,9 +29,14 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const authAccount = await getSocialAuthAccountForUser(user.id, META_PROVIDER);
+        const [facebookAuthAccount, instagramAuthAccount] = await Promise.all([
+            getSocialAuthAccountForUser(user.id, META_PROVIDER),
+            getSocialAuthAccountForUser(user.id, META_INSTAGRAM_PROVIDER)
+        ]);
 
-        if (!authAccount) {
+        const authAccounts = [facebookAuthAccount, instagramAuthAccount].filter(Boolean);
+
+        if (!authAccounts.length) {
             return json(
                 res,
                 404,
@@ -39,18 +44,20 @@ module.exports = async (req, res) => {
             );
         }
 
-        const userAccessToken = decryptText(authAccount.encrypted_access_token);
-        const connections = await fetchMetaConnections(userAccessToken);
+        for (const authAccount of authAccounts) {
+            const userAccessToken = decryptText(authAccount.encrypted_access_token);
+            const connections = await fetchMetaConnections(userAccessToken);
 
-        await replaceSocialConnections({
-            userId: user.id,
-            provider: META_PROVIDER,
-            authAccountId: authAccount.id,
-            connections: connections.map((connection) => ({
-                ...connection,
-                encryptedPageAccessToken: encryptText(connection.pageAccessToken)
-            }))
-        });
+            await mergeSocialConnections({
+                userId: user.id,
+                provider: META_PROVIDER,
+                authAccountId: authAccount.id,
+                connections: connections.map((connection) => ({
+                    ...connection,
+                    encryptedPageAccessToken: encryptText(connection.pageAccessToken)
+                }))
+            });
+        }
 
         const refreshedConnections = await listSocialConnectionsForUser(user.id);
 
