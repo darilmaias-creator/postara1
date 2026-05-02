@@ -128,22 +128,32 @@
                             <form class="stack" id="generator-form">
                                 <label class="field">
                                     <span>Nome do produto</span>
-                                    <input type="text" name="productName" placeholder="Ex.: Cafeteira Elétrica" required />
+                                    <input type="text" name="productName" placeholder="Ex.: Caixa de madeira personalizada" required />
                                 </label>
 
                                 <label class="field">
-                                    <span>Características</span>
-                                    <textarea name="productFeatures" rows="4" placeholder="Ex.: 15 xícaras, timer programável"></textarea>
+                                    <span>Características e especificações</span>
+                                    <textarea
+                                        name="productFeatures"
+                                        rows="5"
+                                        placeholder="Ex.: feita em MDF, 10 cm x 10 cm, gravação a laser, acabamento fosco, ideal para lembrancinhas e presentes personalizados"
+                                    ></textarea>
                                 </label>
+
+                                <p class="hint">
+                                    Descreva o produto com o máximo de detalhes úteis: do que ele é feito, largura, comprimento, altura,
+                                    acabamento, cor, textura, diferenciais e tudo o que ajuda o cliente final a entender o valor da peça.
+                                    Quanto mais claro você for aqui, melhor a IA monta a descrição do post.
+                                </p>
 
                                 <label class="field">
                                     <span>Público-alvo</span>
-                                    <input type="text" name="targetAudience" placeholder="Ex.: quem busca praticidade" />
+                                    <input type="text" name="targetAudience" placeholder="Ex.: pessoas que buscam presentes delicados e personalizados" />
                                 </label>
 
                                 <label class="field">
                                     <span>Tom</span>
-                                    <input type="text" name="tone" placeholder="Ex.: alegre, sofisticado, direto" />
+                                    <input type="text" name="tone" placeholder="Ex.: delicado, sofisticado, acolhedor" />
                                 </label>
 
                                 <label class="field">
