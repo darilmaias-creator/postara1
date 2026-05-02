@@ -40,6 +40,7 @@ const state = {
     sessionId: localStorage.getItem(STORAGE_KEYS.sessionId) || crypto.randomUUID(),
     user: null,
     socialConnections: [],
+    socialDebug: null,
     currentAuthTab: 'login',
     currentView: 'dashboard',
     currentResult: null,
@@ -108,9 +109,11 @@ const elements = {
     logoutButton: document.getElementById('logout-button'),
     connectMetaButton: document.getElementById('connect-meta-button'),
     refreshSocialButton: document.getElementById('refresh-social-button'),
+    debugMetaButton: document.getElementById('debug-meta-button'),
     disconnectMetaButton: document.getElementById('disconnect-meta-button'),
     socialEmptyState: document.getElementById('social-empty-state'),
     socialConnectionsList: document.getElementById('social-connections-list'),
+    socialDebugState: document.getElementById('social-debug-state'),
     generatorForm: document.getElementById('generator-form'),
     generateButton: document.getElementById('generate-button'),
     generationModeSelect: document.getElementById('generation-mode-select'),
@@ -272,6 +275,7 @@ const renderSocialConnections = () => {
 
     elements.connectMetaButton.disabled = !isAuthenticated;
     elements.refreshSocialButton.disabled = !isAuthenticated || !hasConnections;
+    elements.debugMetaButton.disabled = !isAuthenticated;
     elements.disconnectMetaButton.disabled = !isAuthenticated || !hasConnections;
 
     if (!isAuthenticated) {
@@ -279,6 +283,7 @@ const renderSocialConnections = () => {
         elements.socialEmptyState.textContent =
             'Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.';
         elements.socialConnectionsList.innerHTML = '';
+        renderSocialDebug();
         return;
     }
 
@@ -287,6 +292,7 @@ const renderSocialConnections = () => {
         elements.socialEmptyState.textContent =
             'Nenhuma rede Meta conectada ainda. Use o botão acima para importar páginas do Facebook e contas profissionais do Instagram.';
         elements.socialConnectionsList.innerHTML = '';
+        renderSocialDebug();
         return;
     }
 
@@ -313,6 +319,59 @@ const renderSocialConnections = () => {
             `
         )
         .join('');
+    renderSocialDebug();
+};
+
+const renderSocialDebug = () => {
+    if (!state.socialDebug) {
+        elements.socialDebugState.hidden = true;
+        elements.socialDebugState.innerHTML = '';
+        return;
+    }
+
+    const grantedPermissions = Array.isArray(state.socialDebug.grantedPermissions)
+        ? state.socialDebug.grantedPermissions.map((item) => `${item.permission}: ${item.status}`).join('\n')
+        : 'Nenhuma permissão retornada.';
+
+    const rawAccounts = Array.isArray(state.socialDebug.rawAccounts) ? state.socialDebug.rawAccounts : [];
+    const rawAccountsSummary = rawAccounts.length
+        ? rawAccounts
+              .map((account) => {
+                  const instagramHandle =
+                      account.instagramBusinessAccount?.username || account.connectedInstagramAccount?.username || null;
+                  const tasks = Array.isArray(account.tasks) && account.tasks.length ? account.tasks.join(', ') : 'sem tasks';
+                  return `- ${account.name} (${account.id})${instagramHandle ? ` • Instagram: @${instagramHandle}` : ' • sem Instagram'} • tasks: ${tasks}`;
+              })
+              .join('\n')
+        : 'Nenhuma página devolvida pela Meta.';
+
+    const normalizedConnections = Array.isArray(state.socialDebug.normalizedConnections)
+        ? state.socialDebug.normalizedConnections
+              .map(
+                  (connection) =>
+                      `- ${connection.facebookPageName}${connection.instagramUsername ? ` • @${connection.instagramUsername}` : ' • sem Instagram'}`
+              )
+              .join('\n')
+        : 'Nenhuma conexão normalizada.';
+
+    const debugText = [
+        `Diagnóstico Meta`,
+        `Perfil retornado: ${state.socialDebug.profile?.name || 'desconhecido'} (${state.socialDebug.profile?.id || 'sem id'})`,
+        '',
+        `Permissões:`,
+        grantedPermissions || 'Nenhuma permissão retornada.',
+        '',
+        `Páginas brutas devolvidas pela Meta (${state.socialDebug.summary?.rawAccountCount || 0}):`,
+        rawAccountsSummary,
+        '',
+        `Conexões que o Postara conseguiu montar (${state.socialDebug.summary?.normalizedConnectionCount || 0}):`,
+        normalizedConnections || 'Nenhuma conexão normalizada.',
+        '',
+        `Instagram detectado em ${state.socialDebug.summary?.instagramConnectionCount || 0} conexão(ões).`
+    ].join('\n');
+
+    elements.socialDebugState.hidden = false;
+    elements.socialDebugState.innerHTML = `<pre>${escapeHtml(debugText)}</pre>`;
 };
 
 const renderPublishResults = () => {
@@ -865,6 +924,11 @@ const syncHistoryLimit = () => {
 
 const updateAuthenticatedState = (user) => {
     state.user = user;
+
+    if (!user) {
+        state.socialDebug = null;
+    }
+
     renderAuthView();
     renderHistory();
     renderSocialConnections();
@@ -1140,6 +1204,24 @@ const handleRefreshSocialConnections = async () => {
     }
 };
 
+const handleMetaDebug = async () => {
+    try {
+        setLoading(elements.debugMetaButton, true, 'Lendo...');
+        const payload = await apiRequest('/api/social/meta/debug', {
+            method: 'GET'
+        });
+        state.socialDebug = payload?.data || null;
+        renderSocialConnections();
+        setToast('Diagnóstico Meta atualizado.');
+    } catch (error) {
+        state.socialDebug = null;
+        renderSocialConnections();
+        setToast(getErrorMessage(error, 'Não foi possível gerar o diagnóstico da Meta.'), 'error');
+    } finally {
+        setLoading(elements.debugMetaButton, false);
+    }
+};
+
 const handleDisconnectMeta = async () => {
     try {
         setLoading(elements.disconnectMetaButton, true, 'Desconectando...');
@@ -1147,6 +1229,7 @@ const handleDisconnectMeta = async () => {
             method: 'DELETE'
         });
         state.socialConnections = [];
+        state.socialDebug = null;
         state.publishDraft = {
             connectionId: '',
             facebook: true,
@@ -1714,6 +1797,7 @@ const wireEvents = () => {
     elements.googleRegisterButton.addEventListener('click', handleGoogleAuth);
     elements.connectMetaButton.addEventListener('click', handleMetaConnect);
     elements.refreshSocialButton.addEventListener('click', handleRefreshSocialConnections);
+    elements.debugMetaButton.addEventListener('click', handleMetaDebug);
     elements.disconnectMetaButton.addEventListener('click', handleDisconnectMeta);
     elements.logoutButton.addEventListener('click', handleLogout);
     elements.subscriptionToggleButton.addEventListener('click', handleSubscriptionToggle);

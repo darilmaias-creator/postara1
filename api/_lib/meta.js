@@ -117,6 +117,26 @@ const metaGraphPost = async (path, accessToken, body) => {
 
 const fetchMetaProfile = async (userAccessToken) => metaGraphGet('/me?fields=id,name', userAccessToken);
 
+const fetchMetaPermissions = async (userAccessToken) => metaGraphGet('/me/permissions', userAccessToken);
+
+const fetchMetaAccountsDebug = async (userAccessToken) => {
+    const payload = await metaGraphGet(
+        '/me/accounts?fields=id,name,tasks,category,instagram_business_account{id,username},connected_instagram_account{id,username}&limit=100',
+        userAccessToken
+    );
+
+    return Array.isArray(payload?.data)
+        ? payload.data.map((page) => ({
+              id: page.id,
+              name: page.name,
+              category: page.category || null,
+              tasks: Array.isArray(page.tasks) ? page.tasks : [],
+              instagramBusinessAccount: page.instagram_business_account || null,
+              connectedInstagramAccount: page.connected_instagram_account || null
+          }))
+        : [];
+};
+
 const fetchMetaConnections = async (userAccessToken) => {
     const payload = await metaGraphGet(
         '/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100',
@@ -161,7 +181,9 @@ module.exports = {
     META_SCOPES,
     buildMetaOAuthUrl,
     exchangeCodeForLongLivedToken,
+    fetchMetaAccountsDebug,
     fetchMetaConnections,
+    fetchMetaPermissions,
     fetchMetaProfile,
     publishToFacebookPage,
     publishToInstagramAccount

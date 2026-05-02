@@ -474,6 +474,21 @@ button {
     gap: 12px;
 }
 
+.social-debug-state {
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.social-debug-state pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--muted);
+    font: 500 13px/1.65 'IBM Plex Mono', monospace;
+}
+
 .social-connection-card,
 .publish-panel {
     padding: 16px;
