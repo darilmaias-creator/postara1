@@ -522,7 +522,7 @@ const buildPublishPanelMarkup = () => {
             }
 
             <p class="hint">
-                Facebook pode publicar só o texto. Para Instagram, o Postara usa essa imagem junto com o texto pronto selecionado no preview.
+                Se você enviar uma imagem, o Facebook publica foto + legenda. Para Instagram, o Postara usa essa mesma imagem junto com o texto pronto selecionado no preview.
             </p>
 
             ${

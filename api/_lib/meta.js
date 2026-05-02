@@ -156,10 +156,19 @@ const fetchMetaConnections = async (userAccessToken) => {
         : [];
 };
 
-const publishToFacebookPage = async ({ pageId, pageAccessToken, message }) =>
-    metaGraphPost(`/${pageId}/feed`, pageAccessToken, {
+const publishToFacebookPage = async ({ pageId, pageAccessToken, message, mediaUrl }) => {
+    if (mediaUrl) {
+        return metaGraphPost(`/${pageId}/photos`, pageAccessToken, {
+            url: mediaUrl,
+            caption: message,
+            published: 'true'
+        });
+    }
+
+    return metaGraphPost(`/${pageId}/feed`, pageAccessToken, {
         message
     });
+};
 
 const publishToInstagramAccount = async ({ instagramBusinessId, pageAccessToken, caption, mediaUrl }) => {
     if (!mediaUrl) {

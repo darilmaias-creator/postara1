@@ -98,7 +98,8 @@ module.exports = async (req, res) => {
             const facebookResponse = await publishToFacebookPage({
                 pageId: connection.facebook_page_id,
                 pageAccessToken,
-                message: captionText
+                message: captionText,
+                mediaUrl: mediaUrl || undefined
             });
 
             publications.push({
@@ -114,7 +115,7 @@ module.exports = async (req, res) => {
                 destination_network: 'facebook',
                 status: 'success',
                 caption_text: captionText,
-                media_url: null,
+                media_url: mediaUrl || null,
                 response_json: facebookResponse
             });
         }
