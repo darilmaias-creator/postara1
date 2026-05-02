@@ -31,6 +31,10 @@ const VIEW_CONFIG = {
         title: 'Histórico',
         description: 'Reabra resultados antigos com mais conforto e navegue pela timeline com paginação.'
     },
+    'photo-guide': {
+        title: 'Fotos',
+        description: 'Dicas práticas para fotografar melhor seus produtos, mesmo usando apenas o celular.'
+    },
     account: {
         title: 'Conta',
         description: 'Entre, altere o plano de teste e mantenha o app alinhado ao tipo de usuário.'

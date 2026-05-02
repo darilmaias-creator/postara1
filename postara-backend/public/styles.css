@@ -228,9 +228,17 @@ button {
     align-items: start;
 }
 
+.view-grid-guide {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
 .spotlight-panel {
     grid-column: span 12;
     padding: 28px;
+}
+
+.guide-hero-panel {
+    grid-column: span 12;
 }
 
 .spotlight-panel h3 {
@@ -247,6 +255,10 @@ button {
 
 .summary-panel {
     grid-column: span 4;
+}
+
+.view-grid-guide > .panel:not(.guide-hero-panel) {
+    grid-column: span 6;
 }
 
 .summary-title {
@@ -422,6 +434,30 @@ button {
     padding: 16px;
     background: rgba(124, 140, 255, 0.08);
     border-color: rgba(124, 140, 255, 0.18);
+}
+
+.tip-list {
+    display: grid;
+    gap: 12px;
+}
+
+.tip-card {
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--panel-muted);
+}
+
+.tip-card h4,
+.guide-lead {
+    margin: 0 0 8px;
+}
+
+.tip-card p,
+.guide-lead {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
 }
 
 .member-name {
@@ -763,7 +799,8 @@ button {
 @media (max-width: 920px) {
     .workspace-header,
     .view-grid-split,
-    .view-grid-account {
+    .view-grid-account,
+    .view-grid-guide {
         grid-template-columns: 1fr;
         display: grid;
     }
@@ -786,7 +823,9 @@ button {
     }
 
     .summary-panel,
-    .spotlight-panel {
+    .spotlight-panel,
+    .guide-hero-panel,
+    .view-grid-guide > .panel {
         grid-column: span 1;
     }
 }
