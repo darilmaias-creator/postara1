@@ -11,6 +11,24 @@ const {
     getSocialConnectionForUser
 } = require('../_lib/supabase');
 
+const normalizePublishErrorMessage = (error) => {
+    const rawMessage = error instanceof Error ? error.message : 'Não foi possível publicar o conteúdo agora.';
+
+    if (rawMessage.includes('pages_read_engagement')) {
+        return 'A Meta reconheceu a página, mas não liberou a permissão necessária para o Postara publicar no Facebook nesta configuração.';
+    }
+
+    if (rawMessage.includes('pages_manage_posts')) {
+        return 'A Meta ainda não concedeu ao Postara a permissão para publicar posts nessa página do Facebook.';
+    }
+
+    if (rawMessage.includes('instagram_content_publish')) {
+        return 'A Meta ainda não liberou a permissão de publicação no Instagram para esta conexão.';
+    }
+
+    return rawMessage;
+};
+
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -143,6 +161,8 @@ module.exports = async (req, res) => {
             }
         });
     } catch (error) {
+        const normalizedMessage = normalizePublishErrorMessage(error);
+
         if (connectionId && captionText) {
             await createSocialPublication({
                 user_id: user.id,
@@ -153,7 +173,7 @@ module.exports = async (req, res) => {
                 caption_text: captionText,
                 media_url: mediaUrl || null,
                 response_json: {
-                    message: error instanceof Error ? error.message : 'Falha ao publicar na rede social.'
+                    message: normalizedMessage
                 }
             }).catch(() => null);
         }
@@ -163,7 +183,7 @@ module.exports = async (req, res) => {
             500,
             createErrorResponse(
                 'SOCIAL_PUBLISH_ERROR',
-                error instanceof Error ? error.message : 'Não foi possível publicar o conteúdo agora.'
+                normalizedMessage
             )
         );
     }

@@ -487,6 +487,12 @@ const buildPublishPanelMarkup = () => {
             </label>
 
             ${
+                !state.publishDraft.mediaPreviewUrl && state.publishDraft.mediaUploadState !== 'uploading'
+                    ? '<p class="hint">Escolha um arquivo JPG ou PNG. O upload começa automaticamente assim que você selecionar a imagem.</p>'
+                    : ''
+            }
+
+            ${
                 state.publishDraft.mediaUploadState === 'uploading'
                     ? '<p class="hint">Enviando imagem para o Postara...</p>'
                     : ''
