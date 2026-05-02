@@ -764,7 +764,12 @@ button {
     width: min(100%, 1040px);
     margin: 0 auto;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
+}
+
+.photo-guide-article > * {
+    grid-column: 1 / -1;
 }
 
 .guide-hero-blog {
