@@ -540,6 +540,38 @@ button {
     gap: 14px;
 }
 
+.media-preview-card {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.media-preview-image {
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.media-preview-copy {
+    display: grid;
+    gap: 6px;
+}
+
+.media-preview-copy strong,
+.media-preview-copy p {
+    margin: 0;
+}
+
+.media-preview-copy p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
 .publish-status-item {
     padding: 12px 14px;
     border-radius: 14px;

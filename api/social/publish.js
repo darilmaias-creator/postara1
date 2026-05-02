@@ -107,7 +107,7 @@ module.exports = async (req, res) => {
             }
 
             if (!mediaUrl) {
-                throw new Error('Para publicar no Instagram, informe uma URL pública de imagem.');
+                throw new Error('Para publicar no Instagram, envie uma imagem antes de continuar.');
             }
 
             const instagramResponse = await publishToInstagramAccount({

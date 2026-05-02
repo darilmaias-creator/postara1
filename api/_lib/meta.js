@@ -163,7 +163,7 @@ const publishToFacebookPage = async ({ pageId, pageAccessToken, message }) =>
 
 const publishToInstagramAccount = async ({ instagramBusinessId, pageAccessToken, caption, mediaUrl }) => {
     if (!mediaUrl) {
-        throw new Error('Para publicar no Instagram, informe uma URL pública de imagem.');
+        throw new Error('Para publicar no Instagram, envie uma imagem antes de continuar.');
     }
 
     const container = await metaGraphPost(`/${instagramBusinessId}/media`, pageAccessToken, {

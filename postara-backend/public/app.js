@@ -6,6 +6,7 @@ const runtimeConfig = window.POSTARA_CONFIG || {};
 const API_BASE_URL = String(runtimeConfig.apiBaseUrl || '').replace(/\/$/, '');
 const SUPABASE_URL = String(runtimeConfig.supabaseUrl || '').replace(/\/$/, '');
 const SUPABASE_PUBLISHABLE_KEY = String(runtimeConfig.supabasePublishableKey || '').trim();
+const POST_IMAGES_BUCKET = 'postara-images';
 const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 const supabaseClient =
     hasSupabaseConfig && window.supabase?.createClient
@@ -36,6 +37,16 @@ const VIEW_CONFIG = {
     }
 };
 
+const createInitialPublishDraft = () => ({
+    connectionId: '',
+    facebook: true,
+    instagram: false,
+    mediaUrl: '',
+    mediaFileName: '',
+    mediaPreviewUrl: '',
+    mediaUploadState: 'idle'
+});
+
 const state = {
     sessionId: localStorage.getItem(STORAGE_KEYS.sessionId) || crypto.randomUUID(),
     user: null,
@@ -55,12 +66,7 @@ const state = {
         isLoading: false,
         results: []
     },
-    publishDraft: {
-        connectionId: '',
-        facebook: true,
-        instagram: false,
-        mediaUrl: ''
-    },
+    publishDraft: createInitialPublishDraft(),
     history: {
         entries: [],
         page: 1,
@@ -240,13 +246,18 @@ const getSelectedSocialConnection = () =>
     state.socialConnections[0] ||
     null;
 
+const resetPublishMediaDraft = () => {
+    state.publishDraft.mediaUrl = '';
+    state.publishDraft.mediaFileName = '';
+    state.publishDraft.mediaPreviewUrl = '';
+    state.publishDraft.mediaUploadState = 'idle';
+};
+
 const ensurePublishDraftConnection = () => {
     const selectedConnection = getSelectedSocialConnection();
 
     if (!selectedConnection) {
-        state.publishDraft.connectionId = '';
-        state.publishDraft.facebook = true;
-        state.publishDraft.instagram = false;
+        state.publishDraft = createInitialPublishDraft();
         return null;
     }
 
@@ -258,7 +269,7 @@ const ensurePublishDraftConnection = () => {
 
     if (!selectedConnection.supportsInstagram) {
         state.publishDraft.instagram = false;
-        state.publishDraft.mediaUrl = '';
+        resetPublishMediaDraft();
     }
 
     if (!state.publishDraft.facebook && !state.publishDraft.instagram) {
@@ -425,6 +436,7 @@ const buildPublishPanelMarkup = () => {
     const instagramSelected = state.publishDraft.instagram && canInstagram;
     const publishDisabled =
         state.publishState.isLoading ||
+        state.publishDraft.mediaUploadState === 'uploading' ||
         (!state.publishDraft.facebook && !instagramSelected) ||
         (instagramSelected && !state.publishDraft.mediaUrl.trim());
 
@@ -469,20 +481,51 @@ const buildPublishPanelMarkup = () => {
                 instagramSelected
                     ? `
                         <label class="field">
-                            <span>URL pública da imagem para Instagram</span>
+                            <span>Imagem para Instagram</span>
                             <input
-                                type="url"
-                                placeholder="https://seu-servidor.com/imagem.jpg"
-                                value="${escapeHtml(state.publishDraft.mediaUrl)}"
-                                data-publish-media-url
+                                type="file"
+                                accept="image/png,image/jpeg"
+                                data-publish-media-file
                             />
                         </label>
+
+                        ${
+                            state.publishDraft.mediaUploadState === 'uploading'
+                                ? '<p class="hint">Enviando imagem para o Postara...</p>'
+                                : ''
+                        }
+
+                        ${
+                            state.publishDraft.mediaPreviewUrl
+                                ? `
+                                    <div class="media-preview-card">
+                                        <img
+                                            class="media-preview-image"
+                                            src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
+                                            alt="Prévia da imagem escolhida para o Instagram"
+                                        />
+                                        <div class="media-preview-copy">
+                                            <strong>${escapeHtml(
+                                                state.publishDraft.mediaFileName || 'Imagem pronta para publicar'
+                                            )}</strong>
+                                            <p>
+                                                ${escapeHtml(
+                                                    state.publishDraft.mediaUploadState === 'uploaded'
+                                                        ? 'Imagem enviada com sucesso. O Postara já pode usar essa imagem no Instagram.'
+                                                        : 'Imagem selecionada para a publicação.'
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `
+                                : ''
+                        }
                     `
                     : ''
             }
 
             <p class="hint">
-                Facebook pode publicar só o texto. Instagram exige uma imagem pública e usa o texto pronto selecionado no preview.
+                Facebook pode publicar só o texto. Para Instagram, o Postara vai enviar sua imagem e usar o texto pronto selecionado no preview.
             </p>
 
             <button class="button button-primary" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
@@ -523,6 +566,67 @@ const ensureSupabaseClient = () => {
     }
 
     throw new Error('Supabase ainda não foi configurado no frontend.');
+};
+
+const getFileExtension = (fileName = '', mimeType = '') => {
+    const fromName = String(fileName).split('.').pop();
+
+    if (fromName && fromName !== fileName) {
+        return fromName.toLowerCase();
+    }
+
+    if (mimeType === 'image/png') {
+        return 'png';
+    }
+
+    return 'jpg';
+};
+
+const uploadInstagramImage = async (file) => {
+    if (!state.user) {
+        throw new Error('Faça login antes de enviar uma imagem.');
+    }
+
+    if (!file) {
+        throw new Error('Escolha uma imagem antes de continuar.');
+    }
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        throw new Error('Use uma imagem JPG ou PNG.');
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        throw new Error('A imagem precisa ter no máximo 10 MB.');
+    }
+
+    const client = ensureSupabaseClient();
+    const extension = getFileExtension(file.name, file.type);
+    const filePath = `${state.user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+    state.publishDraft.mediaUploadState = 'uploading';
+    state.publishDraft.mediaFileName = file.name;
+    state.publishDraft.mediaPreviewUrl = URL.createObjectURL(file);
+    state.publishDraft.mediaUrl = '';
+    renderResult(state.currentResult, state.currentHistoryMeta);
+
+    const { error } = await client.storage.from(POST_IMAGES_BUCKET).upload(filePath, file, {
+        cacheControl: '3600',
+        contentType: file.type,
+        upsert: false
+    });
+
+    if (error) {
+        resetPublishMediaDraft();
+        throw error;
+    }
+
+    const {
+        data: { publicUrl }
+    } = client.storage.from(POST_IMAGES_BUCKET).getPublicUrl(filePath);
+
+    state.publishDraft.mediaUrl = publicUrl;
+    state.publishDraft.mediaPreviewUrl = publicUrl;
+    state.publishDraft.mediaUploadState = 'uploaded';
 };
 
 const mapProfileToUser = (profile, authUser) => ({
@@ -991,12 +1095,7 @@ const loadCurrentUser = async () => {
 const loadSocialConnections = async () => {
     if (!state.user) {
         state.socialConnections = [];
-        state.publishDraft = {
-            connectionId: '',
-            facebook: true,
-            instagram: false,
-            mediaUrl: ''
-        };
+        state.publishDraft = createInitialPublishDraft();
         state.publishState.results = [];
         renderSocialConnections();
 
@@ -1230,12 +1329,7 @@ const handleDisconnectMeta = async () => {
         });
         state.socialConnections = [];
         state.socialDebug = null;
-        state.publishDraft = {
-            connectionId: '',
-            facebook: true,
-            instagram: false,
-            mediaUrl: ''
-        };
+        state.publishDraft = createInitialPublishDraft();
         renderSocialConnections();
 
         if (state.currentResult) {
@@ -1265,12 +1359,7 @@ const handleLogout = async () => {
         state.currentRequestContext = null;
         state.socialConnections = [];
         state.publishState.results = [];
-        state.publishDraft = {
-            connectionId: '',
-            facebook: true,
-            instagram: false,
-            mediaUrl: ''
-        };
+        state.publishDraft = createInitialPublishDraft();
         resetHistoryState();
         renderResult(null);
         setCurrentView('dashboard');
@@ -1311,7 +1400,7 @@ const handlePublishSelected = async () => {
     }
 
     if (targets.includes('instagram') && !state.publishDraft.mediaUrl.trim()) {
-        setToast('Para Instagram, informe uma URL pública de imagem.', 'error');
+        setToast('Para Instagram, envie uma imagem antes de publicar.', 'error');
         return;
     }
 
@@ -1579,7 +1668,7 @@ const handleResultAction = async (event) => {
     const connectionSelect = event.target.closest('[data-publish-connection-select]');
     const facebookCheckbox = event.target.closest('[data-publish-facebook]');
     const instagramCheckbox = event.target.closest('[data-publish-instagram]');
-    const mediaUrlInput = event.target.closest('[data-publish-media-url]');
+    const mediaFileInput = event.target.closest('[data-publish-media-file]');
     const publishTrigger = event.target.closest('[data-publish-selected]');
     const selectTrigger = event.target.closest('[data-option-select]');
     const regenerateTrigger = event.target.closest('[data-option-regenerate]');
@@ -1606,8 +1695,21 @@ const handleResultAction = async (event) => {
         return;
     }
 
-    if (mediaUrlInput) {
-        state.publishDraft.mediaUrl = mediaUrlInput.value;
+    if (mediaFileInput) {
+        const file = mediaFileInput.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        try {
+            await uploadInstagramImage(file);
+            renderResult(state.currentResult, state.currentHistoryMeta);
+            setToast('Imagem enviada e pronta para o Instagram.');
+        } catch (error) {
+            renderResult(state.currentResult, state.currentHistoryMeta);
+            setToast(getErrorMessage(error, 'Não foi possível enviar essa imagem.'), 'error');
+        }
         return;
     }
 
