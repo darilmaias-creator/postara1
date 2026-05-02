@@ -516,16 +516,16 @@ const buildPublishPanelMarkup = () => {
                                 src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
                                 alt="Prévia da imagem escolhida para a postagem"
                             />
-                            <div class="media-preview-copy">
-                                <strong>${escapeHtml(state.publishDraft.mediaFileName || 'Imagem pronta para publicar')}</strong>
-                                <p>
-                                    ${escapeHtml(
-                                        state.publishDraft.mediaUploadState === 'uploaded'
-                                            ? 'Imagem enviada com sucesso. O Postara já pode reutilizar essa imagem quando o Instagram estiver liberado.'
-                                            : 'Imagem selecionada para a publicação.'
-                                    )}
-                                </p>
-                            </div>
+                                        <div class="media-preview-copy">
+                                            <strong>${escapeHtml(state.publishDraft.mediaFileName || 'Imagem pronta para publicar')}</strong>
+                                            <p>
+                                                ${escapeHtml(
+                                                    state.publishDraft.mediaUploadState === 'uploaded'
+                                                        ? 'Imagem preparada e enviada com sucesso. O Postara ajustou o formato para facilitar a publicação no Instagram.'
+                                                        : 'Imagem selecionada para a publicação.'
+                                                )}
+                                            </p>
+                                        </div>
                         </div>
                     `
                     : ''
@@ -595,6 +595,73 @@ const getFileExtension = (fileName = '', mimeType = '') => {
     return 'jpg';
 };
 
+const loadImageElementFromFile = (file) =>
+    new Promise((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+
+        image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(image);
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Não foi possível ler essa imagem.'));
+        };
+
+        image.src = objectUrl;
+    });
+
+const canvasToBlob = (canvas, type, quality) =>
+    new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                reject(new Error('Não foi possível preparar essa imagem para publicação.'));
+                return;
+            }
+
+            resolve(blob);
+        }, type, quality);
+    });
+
+const prepareImageForSocial = async (file) => {
+    const sourceImage = await loadImageElementFromFile(file);
+    const targetWidth = 1080;
+    const targetHeight = 1350;
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+        throw new Error('Seu navegador não conseguiu preparar a imagem para postagem.');
+    }
+
+    context.fillStyle = '#f3ede5';
+    context.fillRect(0, 0, targetWidth, targetHeight);
+
+    const scale = Math.min(targetWidth / sourceImage.width, targetHeight / sourceImage.height);
+    const drawWidth = sourceImage.width * scale;
+    const drawHeight = sourceImage.height * scale;
+    const offsetX = (targetWidth - drawWidth) / 2;
+    const offsetY = (targetHeight - drawHeight) / 2;
+
+    context.drawImage(sourceImage, offsetX, offsetY, drawWidth, drawHeight);
+
+    const processedBlob = await canvasToBlob(canvas, 'image/jpeg', 0.92);
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'postara-image';
+    const processedFile = new File([processedBlob], `${baseName}-postara-instagram.jpg`, {
+        type: 'image/jpeg'
+    });
+
+    return {
+        file: processedFile,
+        previewUrl: canvas.toDataURL('image/jpeg', 0.82)
+    };
+};
+
 const uploadInstagramImage = async (file) => {
     if (!state.user) {
         throw new Error('Faça login antes de enviar uma imagem.');
@@ -608,23 +675,24 @@ const uploadInstagramImage = async (file) => {
         throw new Error('Use uma imagem JPG ou PNG.');
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-        throw new Error('A imagem precisa ter no máximo 10 MB.');
+    if (file.size > 15 * 1024 * 1024) {
+        throw new Error('A imagem original precisa ter no máximo 15 MB.');
     }
 
     const client = ensureSupabaseClient();
-    const extension = getFileExtension(file.name, file.type);
+    const preparedImage = await prepareImageForSocial(file);
+    const extension = getFileExtension(preparedImage.file.name, preparedImage.file.type);
     const filePath = `${state.user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
     state.publishDraft.mediaUploadState = 'uploading';
     state.publishDraft.mediaFileName = file.name;
-    state.publishDraft.mediaPreviewUrl = URL.createObjectURL(file);
+    state.publishDraft.mediaPreviewUrl = preparedImage.previewUrl;
     state.publishDraft.mediaUrl = '';
     renderResult(state.currentResult, state.currentHistoryMeta);
 
-    const { error } = await client.storage.from(POST_IMAGES_BUCKET).upload(filePath, file, {
+    const { error } = await client.storage.from(POST_IMAGES_BUCKET).upload(filePath, preparedImage.file, {
         cacheControl: '3600',
-        contentType: file.type,
+        contentType: preparedImage.file.type,
         upsert: false
     });
 
