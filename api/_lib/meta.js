@@ -124,6 +124,8 @@ const metaGraphPost = async (path, accessToken, body) => {
     return readMetaJson(response);
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const fetchMetaProfile = async (userAccessToken) => metaGraphGet('/me?fields=id,name', userAccessToken);
 
 const fetchMetaPermissions = async (userAccessToken) => metaGraphGet('/me/permissions', userAccessToken);
@@ -189,9 +191,32 @@ const publishToInstagramAccount = async ({ instagramBusinessId, pageAccessToken,
         caption
     });
 
-    return metaGraphPost(`/${instagramBusinessId}/media_publish`, pageAccessToken, {
-        creation_id: container.id
-    });
+    if (!container?.id) {
+        throw new Error('A Meta criou a mídia do Instagram, mas não retornou o identificador necessário para publicar.');
+    }
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const containerStatus = await metaGraphGet(
+            `/${container.id}?fields=status_code,status`,
+            pageAccessToken
+        );
+
+        if (containerStatus?.status_code === 'FINISHED') {
+            return metaGraphPost(`/${instagramBusinessId}/media_publish`, pageAccessToken, {
+                creation_id: container.id
+            });
+        }
+
+        if (containerStatus?.status_code === 'ERROR') {
+            throw new Error(
+                containerStatus?.status || 'A Meta não conseguiu processar a mídia enviada para o Instagram.'
+            );
+        }
+
+        await wait(2000);
+    }
+
+    throw new Error('A Meta demorou mais do que o esperado para preparar a mídia do Instagram. Tente novamente em instantes.');
 };
 
 module.exports = {
