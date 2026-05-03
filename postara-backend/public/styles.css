@@ -33,6 +33,32 @@ body {
     color: var(--text);
 }
 
+body.app-ready .app-splash {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.app-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top right, rgba(124, 140, 255, 0.16), transparent 25%),
+        linear-gradient(180deg, #0d1016 0%, #10131b 100%);
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.app-splash-logo {
+    width: min(92vw, 520px);
+    height: auto;
+    border-radius: 28px;
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
+}
+
 button,
 input,
 textarea,
@@ -89,14 +115,6 @@ button {
     margin: 0 0 16px;
     border-radius: 18px;
     box-shadow: 0 22px 36px rgba(7, 4, 31, 0.34);
-}
-
-.brand-mark {
-    width: 64px;
-    height: auto;
-    display: block;
-    margin: 0 0 12px;
-    filter: drop-shadow(0 14px 24px rgba(92, 59, 255, 0.28));
 }
 
 .eyebrow,
@@ -1105,6 +1123,11 @@ button {
     .nav-card,
     .panel {
         padding: 16px;
+    }
+
+    .app-splash-logo {
+        width: min(88vw, 360px);
+        border-radius: 22px;
     }
 
     .nav-card {

@@ -85,6 +85,7 @@ localStorage.removeItem('postara.auth.token');
 
 // Centralizamos os seletores para deixar a manutenção da SPA simples conforme o layout evolui.
 const elements = {
+    appSplash: document.getElementById('app-splash'),
     toast: document.getElementById('toast'),
     deploymentNotice: document.getElementById('deployment-notice'),
     viewTitle: document.getElementById('view-title'),
@@ -2069,7 +2070,19 @@ const bootstrap = async () => {
     }
 };
 
+const hideAppSplash = () => {
+    document.body.classList.add('app-ready');
+
+    if (elements.appSplash) {
+        window.setTimeout(() => {
+            elements.appSplash.remove();
+        }, 420);
+    }
+};
+
 bootstrap().catch((error) => {
     console.error(error);
     setToast('Falha ao inicializar o frontend.', 'error');
+}).finally(() => {
+    hideAppSplash();
 });
