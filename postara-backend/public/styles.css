@@ -82,6 +82,23 @@ button {
     padding: 20px;
 }
 
+.brand-logo {
+    width: min(100%, 280px);
+    height: auto;
+    display: block;
+    margin: 0 0 16px;
+    border-radius: 18px;
+    box-shadow: 0 22px 36px rgba(7, 4, 31, 0.34);
+}
+
+.brand-mark {
+    width: 64px;
+    height: auto;
+    display: block;
+    margin: 0 0 12px;
+    filter: drop-shadow(0 14px 24px rgba(92, 59, 255, 0.28));
+}
+
 .eyebrow,
 .panel-kicker {
     margin: 0 0 10px;
