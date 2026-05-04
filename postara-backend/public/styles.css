@@ -923,6 +923,78 @@ button {
     padding: 16px;
 }
 
+.instagram-helper {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.instagram-helper-head {
+    display: grid;
+    gap: 8px;
+}
+
+.instagram-helper-head h4,
+.instagram-help-view h5 {
+    margin: 0;
+}
+
+.instagram-helper-copy {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.instagram-helper-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.instagram-help-view {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(126, 135, 255, 0.06);
+    border: 1px solid rgba(126, 135, 255, 0.18);
+}
+
+.instagram-help-label {
+    margin: 0;
+    color: var(--primary-soft);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.instagram-help-steps {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.instagram-help-steps li + li {
+    margin-top: 6px;
+}
+
+.instagram-helper-note {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    line-height: 1.65;
+}
+
+.instagram-helper-faq {
+    margin-top: 4px;
+}
+
 .history-item {
     display: grid;
     gap: 10px;
@@ -1229,7 +1301,8 @@ button {
     .history-toolbar,
     .pagination,
     .stack-inline,
-    .spotlight-actions {
+    .spotlight-actions,
+    .instagram-helper-choices {
         flex-direction: column;
         align-items: stretch;
     }
