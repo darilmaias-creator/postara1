@@ -181,6 +181,11 @@ const elements = {
     generateButton: document.getElementById('generate-button'),
     generationModeSelect: document.getElementById('generation-mode-select'),
     generationModeHint: document.getElementById('generation-mode-hint'),
+    generationPlanCallout: document.getElementById('generation-plan-callout'),
+    generationPlanBadge: document.getElementById('generation-plan-badge'),
+    generationPlanTitle: document.getElementById('generation-plan-title'),
+    generationPlanText: document.getElementById('generation-plan-text'),
+    generationUpgradeButton: document.getElementById('generation-upgrade-button'),
     historyLockedState: document.getElementById('history-locked-state'),
     historyContent: document.getElementById('history-content'),
     historyList: document.getElementById('history-list'),
@@ -1129,14 +1134,28 @@ const applyPlanToModeSelector = () => {
     if (!isPremium) {
         elements.generationModeSelect.value = 'short';
         elements.generationModeHint.textContent =
-            'Plano free usa modo short. Faça upgrade para desbloquear medium e premium.';
+            'No plano gratuito, o Postara gera textos curtos para você começar sem complicação.';
     } else if (!['short', 'medium', 'premium'].includes(selectedValue)) {
         elements.generationModeSelect.value = 'premium';
         elements.generationModeHint.textContent =
-            'Plano premium libera short, medium e premium. Use o modo conforme o nível de profundidade desejado.';
+            'No premium, você escolhe entre curto, médio e premium conforme a profundidade que quiser no texto.';
     } else {
         elements.generationModeHint.textContent =
-            'Plano premium libera short, medium e premium. Use o modo conforme o nível de profundidade desejado.';
+            'No premium, você escolhe entre curto, médio e premium conforme a profundidade que quiser no texto.';
+    }
+
+    if (!isPremium) {
+        elements.generationPlanCallout.hidden = false;
+        elements.generationPlanBadge.textContent = state.user ? 'Plano gratuito' : 'Modo gratuito';
+        elements.generationPlanTitle.textContent = state.user
+            ? 'Você está no plano gratuito — gera textos curtos.'
+            : 'Você está no modo gratuito — gera textos curtos.';
+        elements.generationPlanText.textContent = state.user
+            ? 'Quer textos mais completos? Assine por R$19,90/mês.'
+            : 'Quer textos mais completos e salvar seu histórico? Entre na conta e assine por R$19,90/mês.';
+        elements.generationUpgradeButton.textContent = state.user ? 'Ver plano premium' : 'Entrar e ver planos';
+    } else {
+        elements.generationPlanCallout.hidden = true;
     }
 };
 
@@ -2158,6 +2177,13 @@ const handleGeneratorDraftChange = () => {
     renderResult(state.currentResult, state.currentHistoryMeta);
 };
 
+const handleGenerationUpgradeClick = () => {
+    setCurrentView('account');
+    elements.memberAuthView.hidden
+        ? elements.authPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        : elements.memberPlanBadge.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
 const handleResultAction = async (event) => {
     const connectionSelect = event.target.closest('[data-publish-connection-select]');
     const facebookCheckbox = event.target.closest('[data-publish-facebook]');
@@ -2434,6 +2460,7 @@ const wireEvents = () => {
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.generatorForm.addEventListener('input', handleGeneratorDraftChange);
     elements.generatorForm.addEventListener('change', handleGeneratorDraftChange);
+    elements.generationUpgradeButton.addEventListener('click', handleGenerationUpgradeClick);
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
         await loadHistoryPage(1);

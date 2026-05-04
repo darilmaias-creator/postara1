@@ -234,8 +234,8 @@
                                 <label class="field">
                                     <span>Modo de geração</span>
                                     <select name="generationMode" id="generation-mode-select">
-                                        <option value="short">Short</option>
-                                        <option value="medium">Medium</option>
+                                        <option value="short">Curto</option>
+                                        <option value="medium">Médio</option>
                                         <option value="premium">Premium</option>
                                     </select>
                                 </label>
@@ -243,6 +243,21 @@
                                 <p class="hint" id="generation-mode-hint">
                                     Usuários free geram em modo short. Premium libera short, medium e premium.
                                 </p>
+
+                                <div class="plan-callout" id="generation-plan-callout" hidden>
+                                    <div class="plan-callout-copy">
+                                        <span class="badge badge-muted" id="generation-plan-badge">Plano gratuito</span>
+                                        <p class="plan-callout-title" id="generation-plan-title">
+                                            Você está no plano gratuito — gera textos curtos.
+                                        </p>
+                                        <p class="plan-callout-text" id="generation-plan-text">
+                                            Quer textos mais completos? Assine por R$19,90/mês.
+                                        </p>
+                                    </div>
+                                    <button class="button" id="generation-upgrade-button" type="button">
+                                        Ver plano premium
+                                    </button>
+                                </div>
 
                                 <button class="button button-primary" id="generate-button" type="submit">
                                     Gerar post
