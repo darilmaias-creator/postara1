@@ -111,6 +111,7 @@ const state = {
         activeStepIndex: 0,
         hasAutoStarted: false
     },
+    instagramHelpMode: 'pro',
     history: {
         entries: [],
         page: 1,
@@ -195,7 +196,11 @@ const elements = {
     onboardingCardTip: document.getElementById('onboarding-card-tip'),
     onboardingCardSkip: document.getElementById('onboarding-card-skip'),
     onboardingPrevButton: document.getElementById('onboarding-prev-button'),
-    onboardingNextButton: document.getElementById('onboarding-next-button')
+    onboardingNextButton: document.getElementById('onboarding-next-button'),
+    instagramHelpProButton: document.getElementById('instagram-help-pro-button'),
+    instagramHelpUnsureButton: document.getElementById('instagram-help-unsure-button'),
+    instagramHelpViewPro: document.getElementById('instagram-help-view-pro'),
+    instagramHelpViewUnsure: document.getElementById('instagram-help-view-unsure')
 };
 
 const escapeHtml = (value = '') =>
@@ -1083,6 +1088,18 @@ const syncOnboardingState = () => {
     }
 
     renderOnboardingCoachmark();
+};
+
+const renderInstagramHelper = () => {
+    const isProMode = state.instagramHelpMode === 'pro';
+
+    elements.instagramHelpProButton.classList.toggle('button-primary', isProMode);
+    elements.instagramHelpProButton.classList.toggle('button-ghost', !isProMode);
+    elements.instagramHelpUnsureButton.classList.toggle('button-primary', !isProMode);
+    elements.instagramHelpUnsureButton.classList.toggle('button-ghost', isProMode);
+
+    elements.instagramHelpViewPro.classList.toggle('is-active', isProMode);
+    elements.instagramHelpViewUnsure.classList.toggle('is-active', !isProMode);
 };
 
 // Mantemos a UI consistente com o plano do usuário para evitar pedir algo que o backend vai negar ou ajustar.
@@ -2270,6 +2287,16 @@ const wireEvents = () => {
         state.onboarding.activeStepIndex += 1;
         syncOnboardingStepView();
     });
+    elements.instagramHelpProButton.addEventListener('click', () => {
+        state.instagramHelpMode = 'pro';
+        renderInstagramHelper();
+        elements.instagramHelpViewPro.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    elements.instagramHelpUnsureButton.addEventListener('click', () => {
+        state.instagramHelpMode = 'unsure';
+        renderInstagramHelper();
+        elements.instagramHelpViewUnsure.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
@@ -2317,6 +2344,7 @@ const bootstrap = async () => {
     renderAuthView();
     renderResult(null);
     renderHistory();
+    renderInstagramHelper();
     wireEvents();
     registerAuthListener();
     await loadCurrentUser();
