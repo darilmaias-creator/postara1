@@ -1,5 +1,12 @@
 const STORAGE_KEYS = {
-    sessionId: 'postara.session.id'
+    sessionId: 'postara.session.id',
+    onboardingStatus: 'postara.onboarding.status'
+};
+
+const ONBOARDING_STATUS = {
+    pending: 'pending',
+    completed: 'completed',
+    skipped: 'skipped'
 };
 
 const runtimeConfig = window.POSTARA_CONFIG || {};
@@ -41,6 +48,33 @@ const VIEW_CONFIG = {
     }
 };
 
+const ONBOARDING_STEPS = [
+    {
+        id: 'login',
+        view: 'account',
+        targetKey: 'authPanel',
+        title: 'Faça login para destravar o fluxo do app',
+        description: 'Comece pela conta. Entrando no Postara, você libera histórico, plano e a base para publicar direto nas redes.',
+        tip: 'Abra a aba Conta e entre ou crie sua conta. Depois volte aqui e seguimos para a conexão das redes.'
+    },
+    {
+        id: 'social',
+        view: 'account',
+        targetKey: 'socialPanel',
+        title: 'Conecte Facebook e Instagram',
+        description: 'Ainda na Conta, conecte suas redes para publicar sem copiar tudo manualmente depois.',
+        tip: 'Primeiro conecte o Facebook. Depois, se quiser, conecte o Instagram para publicar o mesmo conteúdo com imagem.'
+    },
+    {
+        id: 'generate',
+        view: 'generate',
+        targetKey: 'generatorPanel',
+        title: 'Gere seu primeiro post',
+        description: 'Agora vamos para a geração. Quanto mais detalhes você colocar sobre o produto, melhor a IA monta o texto.',
+        tip: 'Descreva material, medidas, acabamento, cor, uso e diferenciais. Isso faz muita diferença na legenda final.'
+    }
+];
+
 const createInitialPublishDraft = () => ({
     connectionId: '',
     facebook: true,
@@ -71,6 +105,12 @@ const state = {
         results: []
     },
     publishDraft: createInitialPublishDraft(),
+    onboarding: {
+        status: localStorage.getItem(STORAGE_KEYS.onboardingStatus) || ONBOARDING_STATUS.pending,
+        visible: false,
+        activeStepIndex: 0,
+        hasAutoStarted: false
+    },
     history: {
         entries: [],
         page: 1,
@@ -99,8 +139,18 @@ const elements = {
     dashboardPlanStatus: document.getElementById('dashboard-plan-status'),
     dashboardHistoryStatus: document.getElementById('dashboard-history-status'),
     dashboardResultStatus: document.getElementById('dashboard-result-status'),
+    dashboardOnboardingPanel: document.getElementById('dashboard-onboarding-panel'),
+    onboardingStepStatusLogin: document.getElementById('onboarding-step-status-login'),
+    onboardingStepStatusSocial: document.getElementById('onboarding-step-status-social'),
+    onboardingStepStatusGenerate: document.getElementById('onboarding-step-status-generate'),
+    onboardingStepCards: [...document.querySelectorAll('[data-onboarding-step-card]')],
+    startOnboardingButton: document.getElementById('start-onboarding-button'),
+    skipOnboardingButton: document.getElementById('skip-onboarding-button'),
     guestAuthView: document.getElementById('guest-auth-view'),
     memberAuthView: document.getElementById('member-auth-view'),
+    authPanel: document.getElementById('auth-panel'),
+    socialPanel: document.getElementById('social-panel'),
+    generatorPanel: document.getElementById('generator-panel'),
     showLoginTab: document.getElementById('show-login-tab'),
     showRegisterTab: document.getElementById('show-register-tab'),
     loginForm: document.getElementById('login-form'),
@@ -137,7 +187,15 @@ const elements = {
     refreshHistoryButton: document.getElementById('refresh-history-button'),
     historyPrevButton: document.getElementById('history-prev-button'),
     historyNextButton: document.getElementById('history-next-button'),
-    historyPaginationLabel: document.getElementById('history-pagination-label')
+    historyPaginationLabel: document.getElementById('history-pagination-label'),
+    onboardingLayer: document.getElementById('onboarding-layer'),
+    onboardingProgressLabel: document.getElementById('onboarding-progress-label'),
+    onboardingCardTitle: document.getElementById('onboarding-card-title'),
+    onboardingCardDescription: document.getElementById('onboarding-card-description'),
+    onboardingCardTip: document.getElementById('onboarding-card-tip'),
+    onboardingCardSkip: document.getElementById('onboarding-card-skip'),
+    onboardingPrevButton: document.getElementById('onboarding-prev-button'),
+    onboardingNextButton: document.getElementById('onboarding-next-button')
 };
 
 const escapeHtml = (value = '') =>
@@ -259,6 +317,37 @@ const resetPublishMediaDraft = () => {
     state.publishDraft.mediaUploadState = 'idle';
 };
 
+const getOnboardingProgress = () => ({
+    login: Boolean(state.user),
+    social: state.socialConnections.length > 0,
+    generate: Boolean(state.currentResult)
+});
+
+const getFirstIncompleteOnboardingStepIndex = () => {
+    const progress = getOnboardingProgress();
+    return ONBOARDING_STEPS.findIndex((step) => !progress[step.id]);
+};
+
+const persistOnboardingStatus = () => {
+    localStorage.setItem(STORAGE_KEYS.onboardingStatus, state.onboarding.status);
+};
+
+const clearOnboardingFocus = () => {
+    [elements.authPanel, elements.socialPanel, elements.generatorPanel].forEach((panel) => {
+        panel?.classList.remove('is-onboarding-focus');
+    });
+};
+
+const closeOnboarding = (status = ONBOARDING_STATUS.completed) => {
+    state.onboarding.status = status;
+    state.onboarding.visible = false;
+    persistOnboardingStatus();
+    clearOnboardingFocus();
+    document.body.classList.remove('onboarding-active');
+    elements.onboardingLayer.hidden = true;
+    elements.dashboardOnboardingPanel.hidden = true;
+};
+
 const ensurePublishDraftConnection = () => {
     const selectedConnection = getSelectedSocialConnection();
 
@@ -301,6 +390,7 @@ const renderSocialConnections = () => {
             'Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.';
         elements.socialConnectionsList.innerHTML = '';
         renderSocialDebug();
+        syncOnboardingState();
         return;
     }
 
@@ -310,6 +400,7 @@ const renderSocialConnections = () => {
             'Nenhuma rede Meta conectada ainda. Use o botão acima para importar páginas do Facebook e contas profissionais do Instagram.';
         elements.socialConnectionsList.innerHTML = '';
         renderSocialDebug();
+        syncOnboardingState();
         return;
     }
 
@@ -337,6 +428,7 @@ const renderSocialConnections = () => {
         )
         .join('');
     renderSocialDebug();
+    syncOnboardingState();
 };
 
 const renderSocialDebug = () => {
@@ -852,6 +944,147 @@ const setCurrentView = (view) => {
     renderView();
 };
 
+const renderOnboardingPanel = () => {
+    if (state.onboarding.status !== ONBOARDING_STATUS.pending) {
+        elements.dashboardOnboardingPanel.hidden = true;
+        return;
+    }
+
+    const progress = getOnboardingProgress();
+    const firstIncompleteIndex = getFirstIncompleteOnboardingStepIndex();
+
+    if (firstIncompleteIndex === -1) {
+        closeOnboarding(ONBOARDING_STATUS.completed);
+        return;
+    }
+
+    elements.dashboardOnboardingPanel.hidden = false;
+
+    elements.onboardingStepCards.forEach((card) => {
+        const stepId = card.dataset.onboardingStepCard;
+        const isComplete = Boolean(progress[stepId]);
+        const isCurrent = stepId === ONBOARDING_STEPS[firstIncompleteIndex]?.id;
+        const statusLabel =
+            stepId === 'login'
+                ? elements.onboardingStepStatusLogin
+                : stepId === 'social'
+                  ? elements.onboardingStepStatusSocial
+                  : elements.onboardingStepStatusGenerate;
+
+        card.classList.toggle('is-complete', isComplete);
+        card.classList.toggle('is-current', isCurrent);
+
+        if (statusLabel) {
+            statusLabel.textContent = isComplete ? 'Concluído' : isCurrent ? 'Agora' : 'Pendente';
+        }
+    });
+
+    elements.startOnboardingButton.textContent = state.onboarding.visible
+        ? 'Continuar tutorial'
+        : firstIncompleteIndex > 0
+          ? 'Continuar passo a passo'
+          : 'Começar passo a passo';
+};
+
+const renderOnboardingCoachmark = () => {
+    if (state.onboarding.status !== ONBOARDING_STATUS.pending || !state.onboarding.visible) {
+        elements.onboardingLayer.hidden = true;
+        document.body.classList.remove('onboarding-active');
+        clearOnboardingFocus();
+        return;
+    }
+
+    const step = ONBOARDING_STEPS[state.onboarding.activeStepIndex];
+    const progress = getOnboardingProgress();
+    const isCurrentStepDone = Boolean(progress[step.id]);
+    const isLastStep = state.onboarding.activeStepIndex === ONBOARDING_STEPS.length - 1;
+
+    elements.onboardingProgressLabel.textContent = `Passo ${state.onboarding.activeStepIndex + 1} de ${ONBOARDING_STEPS.length}`;
+    elements.onboardingCardTitle.textContent = step.title;
+    elements.onboardingCardDescription.textContent = isCurrentStepDone
+        ? `${step.description} Esse passo já está ok por aqui.`
+        : step.description;
+    elements.onboardingCardTip.textContent = step.tip;
+    elements.onboardingPrevButton.hidden = state.onboarding.activeStepIndex === 0;
+    elements.onboardingNextButton.textContent = isLastStep ? 'Concluir tutorial' : 'Próximo passo';
+    elements.onboardingLayer.hidden = false;
+    document.body.classList.add('onboarding-active');
+};
+
+const syncOnboardingStepView = () => {
+    if (state.onboarding.status !== ONBOARDING_STATUS.pending || !state.onboarding.visible) {
+        return;
+    }
+
+    const step = ONBOARDING_STEPS[state.onboarding.activeStepIndex];
+
+    if (!step) {
+        return;
+    }
+
+    if (state.currentView !== step.view) {
+        setCurrentView(step.view);
+    }
+
+    clearOnboardingFocus();
+
+    const target = elements[step.targetKey];
+
+    if (target) {
+        target.classList.add('is-onboarding-focus');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    renderOnboardingPanel();
+    renderOnboardingCoachmark();
+};
+
+const startOnboarding = (stepIndex = null) => {
+    if (state.onboarding.status !== ONBOARDING_STATUS.pending) {
+        return;
+    }
+
+    const firstIncompleteIndex = getFirstIncompleteOnboardingStepIndex();
+
+    if (firstIncompleteIndex === -1) {
+        closeOnboarding(ONBOARDING_STATUS.completed);
+        return;
+    }
+
+    state.onboarding.visible = true;
+    state.onboarding.activeStepIndex =
+        typeof stepIndex === 'number'
+            ? Math.max(0, Math.min(stepIndex, ONBOARDING_STEPS.length - 1))
+            : firstIncompleteIndex;
+
+    syncOnboardingStepView();
+};
+
+const syncOnboardingState = () => {
+    if (state.onboarding.status !== ONBOARDING_STATUS.pending) {
+        elements.dashboardOnboardingPanel.hidden = true;
+        elements.onboardingLayer.hidden = true;
+        clearOnboardingFocus();
+        return;
+    }
+
+    const firstIncompleteIndex = getFirstIncompleteOnboardingStepIndex();
+
+    if (firstIncompleteIndex === -1) {
+        closeOnboarding(ONBOARDING_STATUS.completed);
+        return;
+    }
+
+    renderOnboardingPanel();
+
+    if (state.onboarding.visible) {
+        syncOnboardingStepView();
+        return;
+    }
+
+    renderOnboardingCoachmark();
+};
+
 // Mantemos a UI consistente com o plano do usuário para evitar pedir algo que o backend vai negar ou ajustar.
 const applyPlanToModeSelector = () => {
     const plan = state.user?.subscriptionPlan || 'free';
@@ -903,6 +1136,8 @@ const renderDashboard = () => {
         elements.dashboardResultStatus.textContent =
             `${state.currentResult.title} • ${state.currentResult.generationMode} • ${state.currentResult.source}`;
     }
+
+    syncOnboardingState();
 };
 
 const getResultMarkup = (result, meta = null) => {
@@ -2013,6 +2248,28 @@ const wireEvents = () => {
     elements.logoutButton.addEventListener('click', handleLogout);
     elements.subscriptionToggleButton.addEventListener('click', handleSubscriptionToggle);
     elements.refreshProfileButton.addEventListener('click', handleRefreshProfile);
+    elements.startOnboardingButton.addEventListener('click', () => {
+        startOnboarding();
+    });
+    elements.skipOnboardingButton.addEventListener('click', () => {
+        closeOnboarding(ONBOARDING_STATUS.skipped);
+    });
+    elements.onboardingCardSkip.addEventListener('click', () => {
+        closeOnboarding(ONBOARDING_STATUS.skipped);
+    });
+    elements.onboardingPrevButton.addEventListener('click', () => {
+        state.onboarding.activeStepIndex = Math.max(0, state.onboarding.activeStepIndex - 1);
+        syncOnboardingStepView();
+    });
+    elements.onboardingNextButton.addEventListener('click', () => {
+        if (state.onboarding.activeStepIndex >= ONBOARDING_STEPS.length - 1) {
+            closeOnboarding(ONBOARDING_STATUS.completed);
+            return;
+        }
+
+        state.onboarding.activeStepIndex += 1;
+        syncOnboardingStepView();
+    });
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
@@ -2068,6 +2325,8 @@ const bootstrap = async () => {
     if (state.user) {
         await loadHistoryPage(1);
     }
+
+    syncOnboardingState();
 };
 
 const hideAppSplash = () => {
@@ -2085,4 +2344,10 @@ bootstrap().catch((error) => {
     setToast('Falha ao inicializar o frontend.', 'error');
 }).finally(() => {
     hideAppSplash();
+    window.setTimeout(() => {
+        if (state.onboarding.status === ONBOARDING_STATUS.pending && !state.onboarding.hasAutoStarted) {
+            state.onboarding.hasAutoStarted = true;
+            startOnboarding();
+        }
+    }, 520);
 });

@@ -103,6 +103,52 @@
                             </div>
                         </section>
 
+                        <section class="panel onboarding-panel" id="dashboard-onboarding-panel" hidden>
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="panel-kicker">Primeiros passos</p>
+                                    <h3>Faça login → conecte suas redes → gere seu primeiro post</h3>
+                                </div>
+                            </div>
+                            <p class="onboarding-panel-copy">
+                                Se é sua primeira vez aqui, o Postara te mostra o caminho mais rápido para sair do zero sem ficar perdido no menu.
+                            </p>
+                            <div class="onboarding-step-grid">
+                                <article class="onboarding-step-card" data-onboarding-step-card="login">
+                                    <div class="onboarding-step-head">
+                                        <span class="badge badge-muted">Passo 1</span>
+                                        <span class="onboarding-step-status" id="onboarding-step-status-login">Pendente</span>
+                                    </div>
+                                    <h4>Faça login</h4>
+                                    <p>Entre ou crie sua conta para salvar histórico, conectar redes e liberar o fluxo completo do app.</p>
+                                </article>
+                                <article class="onboarding-step-card" data-onboarding-step-card="social">
+                                    <div class="onboarding-step-head">
+                                        <span class="badge badge-muted">Passo 2</span>
+                                        <span class="onboarding-step-status" id="onboarding-step-status-social">Pendente</span>
+                                    </div>
+                                    <h4>Conecte suas redes</h4>
+                                    <p>Conecte Facebook e Instagram para publicar direto do app sem precisar copiar tudo manualmente.</p>
+                                </article>
+                                <article class="onboarding-step-card" data-onboarding-step-card="generate">
+                                    <div class="onboarding-step-head">
+                                        <span class="badge badge-muted">Passo 3</span>
+                                        <span class="onboarding-step-status" id="onboarding-step-status-generate">Pendente</span>
+                                    </div>
+                                    <h4>Gere seu primeiro post</h4>
+                                    <p>Descreva o produto com detalhes e deixe a IA montar uma legenda mais bonita, clara e pronta para vender.</p>
+                                </article>
+                            </div>
+                            <div class="spotlight-actions">
+                                <button class="button button-primary" id="start-onboarding-button" type="button">
+                                    Começar passo a passo
+                                </button>
+                                <button class="button button-ghost" id="skip-onboarding-button" type="button">
+                                    Pular tutorial
+                                </button>
+                            </div>
+                        </section>
+
                         <section class="panel summary-panel">
                             <div class="panel-heading">
                                 <div>
@@ -146,7 +192,7 @@
 
                 <section class="view" data-view="generate" hidden>
                     <div class="view-grid view-grid-split">
-                        <section class="panel generator-panel">
+                        <section class="panel generator-panel" id="generator-panel">
                             <div class="panel-heading">
                                 <div>
                                     <p class="panel-kicker">Core</p>
@@ -427,7 +473,7 @@
 
                 <section class="view" data-view="account" hidden>
                     <div class="view-grid view-grid-account">
-                        <section class="panel auth-panel">
+                        <section class="panel auth-panel" id="auth-panel">
                             <div class="panel-heading">
                                 <div>
                                     <p class="panel-kicker">Conta</p>
@@ -532,7 +578,7 @@
                             </div>
                         </section>
 
-                        <section class="panel account-guide-panel">
+                        <section class="panel account-guide-panel" id="social-panel">
                             <div class="panel-heading">
                                 <div>
                                     <p class="panel-kicker">Redes sociais</p>
@@ -597,6 +643,24 @@
     </div>
 
     <div class="toast" id="toast" hidden></div>
+    <div class="onboarding-layer" id="onboarding-layer" hidden>
+        <div class="onboarding-card" aria-live="polite" aria-label="Tutorial inicial do Postara">
+            <div class="onboarding-card-topline">
+                <span class="badge" id="onboarding-progress-label">Passo 1 de 3</span>
+                <button class="onboarding-skip-link" id="onboarding-card-skip" type="button">Pular tutorial</button>
+            </div>
+            <h3 id="onboarding-card-title">Faça login para começar</h3>
+            <p id="onboarding-card-description">
+                Entre no app para salvar seu histórico, conectar redes e seguir com o fluxo completo.
+            </p>
+            <div class="onboarding-card-tip" id="onboarding-card-tip"></div>
+            <p class="onboarding-card-note">Você pode continuar clicando no app enquanto essa dica está aberta.</p>
+            <div class="onboarding-card-actions">
+                <button class="button button-ghost" id="onboarding-prev-button" type="button">Voltar</button>
+                <button class="button button-primary" id="onboarding-next-button" type="button">Próximo</button>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./runtime-config.js"></script>
     <script type="module" src="./app.js"></script>

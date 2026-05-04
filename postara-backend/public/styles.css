@@ -272,6 +272,10 @@ button {
     padding: 28px;
 }
 
+.onboarding-panel {
+    grid-column: span 12;
+}
+
 .guide-hero-panel {
     grid-column: span 12;
 }
@@ -290,6 +294,70 @@ button {
 
 .summary-panel {
     grid-column: span 4;
+}
+
+.onboarding-panel-copy {
+    margin: 0 0 18px;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.onboarding-step-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.onboarding-step-card {
+    display: grid;
+    gap: 10px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(126, 135, 255, 0.16);
+    background: rgba(255, 255, 255, 0.03);
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.onboarding-step-card.is-current {
+    border-color: rgba(126, 135, 255, 0.45);
+    background: rgba(126, 135, 255, 0.08);
+}
+
+.onboarding-step-card.is-complete {
+    border-color: rgba(103, 227, 159, 0.28);
+    background: rgba(103, 227, 159, 0.06);
+}
+
+.onboarding-step-card h4 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.onboarding-step-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.onboarding-step-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.onboarding-step-status {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.onboarding-step-card.is-current .onboarding-step-status {
+    color: var(--primary-soft);
+}
+
+.onboarding-step-card.is-complete .onboarding-step-status {
+    color: #8ff1bc;
 }
 
 .view-grid-guide > .panel:not(.guide-hero-panel) {
@@ -408,6 +476,82 @@ button {
 
 .button-google:hover {
     border-color: #ffffff;
+}
+
+.onboarding-layer {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 30;
+    width: min(380px, calc(100vw - 24px));
+}
+
+.onboarding-card {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(126, 135, 255, 0.28);
+    background: rgba(15, 18, 26, 0.96);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+}
+
+.onboarding-card h3 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.3;
+}
+
+.onboarding-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.onboarding-card-topline {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.onboarding-skip-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.onboarding-skip-link:hover {
+    color: var(--text);
+}
+
+.onboarding-card-tip {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(126, 135, 255, 0.08);
+    border: 1px solid rgba(126, 135, 255, 0.18);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.onboarding-card-note {
+    font-size: 13px;
+}
+
+.onboarding-card-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.is-onboarding-focus {
+    position: relative;
+    z-index: 8;
+    border-color: rgba(126, 135, 255, 0.56) !important;
+    box-shadow: 0 0 0 1px rgba(126, 135, 255, 0.4), 0 0 0 8px rgba(126, 135, 255, 0.12);
 }
 
 .tabs {
@@ -1062,6 +1206,10 @@ button {
     .view-grid-dashboard .summary-panel {
         grid-column: span 6;
     }
+
+    .onboarding-step-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 920px) {
@@ -1090,7 +1238,15 @@ button {
         grid-template-columns: 1fr;
     }
 
+    .onboarding-layer {
+        right: 16px;
+        left: 16px;
+        bottom: 16px;
+        width: auto;
+    }
+
     .summary-panel,
+    .onboarding-panel,
     .spotlight-panel,
     .guide-hero-panel,
     .view-grid-guide > .panel {
@@ -1132,6 +1288,10 @@ button {
 
     .nav-card {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .onboarding-card-actions {
+        flex-direction: column;
     }
 
     .nav-link {
