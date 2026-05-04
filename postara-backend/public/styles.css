@@ -964,6 +964,10 @@ button {
     transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
+.instagram-help-view[hidden] {
+    display: none !important;
+}
+
 .instagram-help-view.is-active {
     border-color: rgba(126, 135, 255, 0.42);
     background: rgba(126, 135, 255, 0.11);

@@ -1097,7 +1097,11 @@ const renderInstagramHelper = () => {
     elements.instagramHelpProButton.classList.toggle('button-ghost', !isProMode);
     elements.instagramHelpUnsureButton.classList.toggle('button-primary', !isProMode);
     elements.instagramHelpUnsureButton.classList.toggle('button-ghost', isProMode);
+    elements.instagramHelpProButton.setAttribute('aria-pressed', String(isProMode));
+    elements.instagramHelpUnsureButton.setAttribute('aria-pressed', String(!isProMode));
 
+    elements.instagramHelpViewPro.hidden = !isProMode;
+    elements.instagramHelpViewUnsure.hidden = isProMode;
     elements.instagramHelpViewPro.classList.toggle('is-active', isProMode);
     elements.instagramHelpViewUnsure.classList.toggle('is-active', !isProMode);
 };
