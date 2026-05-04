@@ -28,15 +28,15 @@ const supabaseClient =
 const VIEW_CONFIG = {
     dashboard: {
         title: 'Visão geral',
-        description: 'Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.'
+        description: 'Veja o estado da conta, por onde começar e os atalhos para continuar no app.'
     },
     generate: {
         title: 'Gerar conteúdo',
-        description: 'Crie novos posts com o plano atual e acompanhe a prévia completa em um espaço dedicado.'
+        description: 'Descreva seu produto, gere novos posts e acompanhe o resultado completo em um espaço dedicado.'
     },
     history: {
         title: 'Histórico',
-        description: 'Reabra resultados antigos com mais conforto e navegue pela timeline com paginação.'
+        description: 'Abra de novo resultados antigos com mais conforto e navegue pelo histórico em páginas.'
     },
     'photo-guide': {
         title: 'Fotos',
@@ -44,7 +44,7 @@ const VIEW_CONFIG = {
     },
     account: {
         title: 'Conta',
-        description: 'Entre, altere o plano de teste e mantenha o app alinhado ao tipo de usuário.'
+        description: 'Entre, conecte suas redes e ajuste sua conta para deixar o app pronto para publicar.'
     }
 };
 
@@ -475,7 +475,7 @@ const renderSocialDebug = () => {
                 : 'Nenhuma conexão normalizada.';
 
             return [
-                `Diagnóstico Meta (${snapshot.providerLabel || 'facebook'})`,
+                `Teste de conexão (${snapshot.providerLabel || 'facebook'})`,
                 `Perfil retornado: ${snapshot.profile?.name || 'desconhecido'} (${snapshot.profile?.id || 'sem id'})`,
                 '',
                 `Permissões:`,
@@ -851,20 +851,20 @@ const renderDeploymentNotice = () => {
     if (!hasSupabaseConfig) {
         elements.deploymentNotice.hidden = false;
         elements.deploymentNotice.textContent =
-            'Supabase ainda não foi configurado no frontend. Sem isso, login e histórico não funcionam.';
+            'O app ainda não foi ligado ao Supabase nesta tela. Sem isso, entrar na conta e salvar histórico não funcionam.';
         return;
     }
 
     if (API_BASE_URL) {
         elements.deploymentNotice.hidden = false;
         elements.deploymentNotice.textContent =
-            `Auth e histórico estão no Supabase. A geração está conectada à API em ${API_BASE_URL}.`;
+            `Sua conta e seu histórico já estão prontos. A criação dos posts está conectada ao servidor em ${API_BASE_URL}.`;
         return;
     }
 
     elements.deploymentNotice.hidden = false;
     elements.deploymentNotice.textContent =
-        'Auth e histórico já estão conectados ao Supabase. A geração agora usa a API da própria Vercel quando a chave Gemini estiver configurada.';
+        'Sua conta e seu histórico já estão prontos. A criação dos posts usa a API da própria Vercel quando a chave Gemini estiver configurada.';
 };
 
 const apiRequest = async (path, options = {}) => {
@@ -1132,7 +1132,7 @@ const applyPlanToModeSelector = () => {
 
 const renderDashboard = () => {
     if (!state.user) {
-        elements.dashboardAuthStatus.textContent = 'Navegação em modo visitante.';
+        elements.dashboardAuthStatus.textContent = 'Você ainda não está logado.';
         elements.dashboardPlanStatus.textContent =
             'Faça login para salvar histórico e desbloquear o fluxo premium.';
     } else {
@@ -1148,7 +1148,7 @@ const renderDashboard = () => {
         elements.dashboardHistoryStatus.textContent = 'Nenhuma geração salva ainda para esta conta.';
     } else {
         elements.dashboardHistoryStatus.textContent =
-            `${state.history.total} geração(ões) disponíveis para reabrir e reaproveitar.`;
+            `${state.history.total} geração(ões) disponíveis para abrir de novo e reaproveitar.`;
     }
 
     if (!state.currentResult) {
@@ -1165,7 +1165,7 @@ const getResultMarkup = (result, meta = null) => {
     if (!result) {
         return `
             <div class="empty-state">
-                Gere um post ou reabra um item do histórico para visualizar título, legenda, CTA, hashtags e metadados.
+                Gere um post ou abra de novo um item do histórico para ver título, legenda, CTA, hashtags e detalhes do conteúdo.
             </div>
         `;
     }
@@ -1368,7 +1368,7 @@ const renderHistory = () => {
                         <p>${escapeHtml(preview)}${entry.response.caption.length > 140 ? '…' : ''}</p>
                         <div class="history-item-actions">
                             <button class="button button-ghost" type="button" data-history-open="${escapeHtml(entry.id)}">
-                                Reabrir
+                                Abrir de novo
                             </button>
                         </div>
                     </article>
@@ -1675,7 +1675,7 @@ const handleMetaDebug = async () => {
         });
         state.socialDebug = payload?.data || null;
         renderSocialConnections();
-        setToast('Diagnóstico Meta atualizado.');
+        setToast('Teste de conexão atualizado.');
     } catch (error) {
         state.socialDebug = null;
         renderSocialConnections();
@@ -1737,7 +1737,7 @@ const handleLogout = async () => {
 
 const handlePublishSelected = async () => {
     if (!state.currentResult) {
-        setToast('Gere ou reabra um conteúdo antes de publicar.', 'error');
+        setToast('Gere um conteúdo ou abra um salvo antes de publicar.', 'error');
         return;
     }
 
@@ -2185,7 +2185,7 @@ const openHistoryEntry = async (historyId) => {
         });
         setToast('Histórico reaberto com sucesso.');
     } catch (error) {
-        setToast(getErrorMessage(error, 'Não foi possível reabrir esse item.'), 'error');
+        setToast(getErrorMessage(error, 'Não foi possível abrir esse item de novo.'), 'error');
     }
 };
 

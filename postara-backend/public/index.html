@@ -51,7 +51,7 @@
                 </button>
                 <button class="nav-link" data-view-target="history" type="button">
                     <span class="nav-link-label">Histórico</span>
-                    <span class="nav-link-copy">Reabrir gerações salvas</span>
+                    <span class="nav-link-copy">Abrir posts salvos</span>
                 </button>
                 <button class="nav-link" data-view-target="photo-guide" type="button">
                     <span class="nav-link-label">Fotos</span>
@@ -67,7 +67,7 @@
         <div class="workspace">
             <header class="workspace-header panel">
                 <div>
-                    <p class="panel-kicker">Workspace</p>
+                    <p class="panel-kicker">Painel</p>
                     <h2 id="view-title">Visão geral</h2>
                     <p class="workspace-copy" id="view-description">
                         Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.
@@ -84,7 +84,7 @@
                 <section class="view is-active" data-view="dashboard">
                     <div class="view-grid view-grid-dashboard">
                         <section class="panel spotlight-panel">
-                            <p class="panel-kicker">Panorama</p>
+                            <p class="panel-kicker">Comece aqui</p>
                             <h3>Agora o app respira melhor</h3>
                             <p class="spotlight-copy">
                                 Separamos o fluxo em áreas claras para você testar no celular e no desktop
@@ -156,7 +156,7 @@
                                     <h3>Status atual</h3>
                                 </div>
                             </div>
-                            <p class="summary-title" id="dashboard-auth-status">Navegação em modo visitante.</p>
+                                <p class="summary-title" id="dashboard-auth-status">Você ainda não está logado.</p>
                             <p class="summary-copy" id="dashboard-plan-status">
                                 Faça login para salvar histórico e desbloquear o fluxo premium.
                             </p>
@@ -165,26 +165,26 @@
                         <section class="panel summary-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Biblioteca</p>
+                                    <p class="panel-kicker">Seus posts</p>
                                     <h3>Histórico</h3>
                                 </div>
                             </div>
                             <p class="summary-title" id="dashboard-history-status">Seu histórico ainda está vazio.</p>
                             <p class="summary-copy">
-                                As gerações autenticadas ficam prontas para reabrir, paginar e reutilizar.
+                                Seus posts salvos ficam prontos para abrir de novo, navegar e reaproveitar depois.
                             </p>
                         </section>
 
                         <section class="panel summary-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Preview</p>
+                                    <p class="panel-kicker">Resultado</p>
                                     <h3>Último resultado</h3>
                                 </div>
                             </div>
                             <p class="summary-title" id="dashboard-result-status">Nenhum conteúdo gerado ainda.</p>
                             <p class="summary-copy">
-                                Quando você gerar ou reabrir um item do histórico, o resumo aparece aqui.
+                                Quando você gerar ou abrir de novo um item do histórico, o resumo aparece aqui.
                             </p>
                         </section>
                     </div>
@@ -195,7 +195,7 @@
                         <section class="panel generator-panel" id="generator-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Core</p>
+                                    <p class="panel-kicker">Seu produto</p>
                                     <h3>Gerar conteúdo</h3>
                                 </div>
                             </div>
@@ -253,7 +253,7 @@
                         <section class="panel preview-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Output</p>
+                                    <p class="panel-kicker">Resultado</p>
                                     <h3>Prévia do conteúdo</h3>
                                 </div>
                             </div>
@@ -268,13 +268,13 @@
                         <section class="panel history-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Timeline</p>
+                                    <p class="panel-kicker">Lista</p>
                                     <h3>Histórico</h3>
                                 </div>
                             </div>
 
                             <div class="empty-state" id="history-locked-state">
-                                Faça login para listar gerações persistidas, paginar e reabrir resultados antigos.
+                                Faça login para ver seus posts salvos, navegar pelas páginas e abrir de novo resultados antigos.
                             </div>
 
                             <div class="stack" id="history-content" hidden>
@@ -305,8 +305,8 @@
                         <section class="panel preview-panel">
                             <div class="panel-heading">
                                 <div>
-                                    <p class="panel-kicker">Reabertura</p>
-                                    <h3>Resultado selecionado</h3>
+                                    <p class="panel-kicker">Abrir de novo</p>
+                                    <h3>Resultado escolhido</h3>
                                 </div>
                             </div>
 
@@ -598,7 +598,7 @@
                                         Atualizar redes
                                     </button>
                                     <button class="button button-ghost" id="debug-meta-button" type="button">
-                                        Diagnóstico Meta
+                                        Testar conexão
                                     </button>
                                     <button class="button button-ghost" id="disconnect-meta-button" type="button">
                                         Desconectar Meta
@@ -690,7 +690,7 @@
                                 </article>
                                 <article class="guide-card">
                                     <h4>Histórico</h4>
-                                    <p>Ao autenticar, cada geração fica salva para reabrir e reaproveitar depois.</p>
+                                    <p>Ao entrar na sua conta, cada geração fica salva para abrir de novo e reaproveitar depois.</p>
                                 </article>
                                 <article class="guide-card">
                                     <h4>Publicação</h4>
