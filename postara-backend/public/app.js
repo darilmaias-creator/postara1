@@ -222,6 +222,16 @@ const buildPostReadyText = (option) =>
         .filter(Boolean)
         .join('\n\n');
 
+const formatGenerationModeLabel = (mode = 'short') => {
+    const labels = {
+        short: 'Curto',
+        medium: 'Médio',
+        premium: 'Premium'
+    };
+
+    return labels[mode] || mode;
+};
+
 const getResultOptions = (result) => {
     if (!result) {
         return [];
@@ -1161,7 +1171,9 @@ const renderDashboard = () => {
     syncOnboardingState();
 };
 
-const getResultMarkup = (result, meta = null) => {
+const getResultMarkup = (result, meta = null, options = {}) => {
+    const { showMeta = true } = options;
+
     if (!result) {
         return `
             <div class="empty-state">
@@ -1192,11 +1204,17 @@ const getResultMarkup = (result, meta = null) => {
 
     return `
         <article class="result-view">
-            <div class="result-meta">
-                ${badges
-                    .map((badge) => `<span class="badge badge-muted">${escapeHtml(badge)}</span>`)
-                    .join('')}
-            </div>
+            ${
+                showMeta
+                    ? `
+                        <div class="result-meta">
+                            ${badges
+                                .map((badge) => `<span class="badge badge-muted">${escapeHtml(badge)}</span>`)
+                                .join('')}
+                        </div>
+                    `
+                    : ''
+            }
             ${
                 hasMultipleOptions
                     ? `
@@ -1286,14 +1304,122 @@ const getResultMarkup = (result, meta = null) => {
     `;
 };
 
+const getLiveGeneratorRequestContext = () => {
+    if (!elements.generatorForm) {
+        return {
+            productName: '',
+            productFeatures: undefined,
+            targetAudience: undefined,
+            tone: undefined,
+            generationMode: 'short'
+        };
+    }
+
+    return createRequestContextFromFormData(new FormData(elements.generatorForm));
+};
+
+const getGenerateDraftPreviewMarkup = () => {
+    const draft = getLiveGeneratorRequestContext();
+    const hasContent = Boolean(
+        draft.productName || draft.productFeatures || draft.targetAudience || draft.tone
+    );
+
+    if (!hasContent) {
+        return '';
+    }
+
+    const detailItems = [
+        draft.productFeatures
+            ? `
+                <div class="draft-preview-item">
+                    <span class="draft-preview-label">Características e especificações</span>
+                    <p class="draft-preview-value">${escapeHtml(draft.productFeatures)}</p>
+                </div>
+            `
+            : '',
+        draft.targetAudience
+            ? `
+                <div class="draft-preview-item">
+                    <span class="draft-preview-label">Público-alvo</span>
+                    <p class="draft-preview-value">${escapeHtml(draft.targetAudience)}</p>
+                </div>
+            `
+            : '',
+        draft.tone
+            ? `
+                <div class="draft-preview-item">
+                    <span class="draft-preview-label">Tom escolhido</span>
+                    <p class="draft-preview-value">${escapeHtml(draft.tone)}</p>
+                </div>
+            `
+            : '',
+        `
+            <div class="draft-preview-item">
+                <span class="draft-preview-label">Modo de geração</span>
+                <p class="draft-preview-value">${escapeHtml(formatGenerationModeLabel(draft.generationMode))}</p>
+            </div>
+        `
+    ]
+        .filter(Boolean)
+        .join('');
+
+    return `
+        <article class="draft-preview-card">
+            <div class="draft-preview-head">
+                <span class="badge badge-muted">O que você informou</span>
+            </div>
+            ${
+                draft.productName
+                    ? `
+                        <div class="draft-preview-hero">
+                            <h4>${escapeHtml(draft.productName)}</h4>
+                        </div>
+                    `
+                    : ''
+            }
+            <div class="draft-preview-grid">
+                ${detailItems}
+            </div>
+        </article>
+    `;
+};
+
+const getGeneratePreviewMarkup = (result, meta = null) => {
+    const draftMarkup = getGenerateDraftPreviewMarkup();
+    const resultMarkup = result
+        ? `
+            <div class="result-preview-divider"></div>
+            ${getResultMarkup(result, meta, { showMeta: false })}
+        `
+        : '';
+
+    if (!draftMarkup && !resultMarkup) {
+        return `
+            <div class="empty-state">
+                Escreva sobre o seu produto e a prévia mostra aqui só o que você informou. Quando você clicar em gerar, o texto criado pela IA aparece abaixo.
+            </div>
+        `;
+    }
+
+    return `
+        <div class="generate-preview-stack">
+            ${draftMarkup}
+            ${resultMarkup}
+        </div>
+    `;
+};
+
 // Renderizamos a mesma resposta em slots diferentes para reaproveitar o preview nas áreas de geração e histórico.
 const renderResult = (result, meta = null) => {
     state.currentResult = normalizeResultShape(result);
     state.currentHistoryMeta = meta;
 
-    const markup = getResultMarkup(state.currentResult, meta);
     elements.resultSlots.forEach((slot) => {
-        slot.innerHTML = markup;
+        const slotType = slot.dataset.resultSlot;
+        slot.innerHTML =
+            slotType === 'generate'
+                ? getGeneratePreviewMarkup(state.currentResult, meta)
+                : getResultMarkup(state.currentResult, meta);
     });
 
     renderDashboard();
@@ -2028,6 +2154,10 @@ const handleGenerateSubmit = async (event) => {
     }
 };
 
+const handleGeneratorDraftChange = () => {
+    renderResult(state.currentResult, state.currentHistoryMeta);
+};
+
 const handleResultAction = async (event) => {
     const connectionSelect = event.target.closest('[data-publish-connection-select]');
     const facebookCheckbox = event.target.closest('[data-publish-facebook]');
@@ -2302,6 +2432,8 @@ const wireEvents = () => {
         elements.instagramHelpViewUnsure.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
+    elements.generatorForm.addEventListener('input', handleGeneratorDraftChange);
+    elements.generatorForm.addEventListener('change', handleGeneratorDraftChange);
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
         await loadHistoryPage(1);
