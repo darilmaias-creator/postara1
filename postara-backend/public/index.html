@@ -496,10 +496,16 @@
                 <section class="view" data-view="account" hidden>
                     <div class="view-grid view-grid-account">
                         <section class="panel auth-panel" id="auth-panel">
-                            <div class="panel-heading">
+                            <div class="panel-heading panel-heading-inline">
                                 <div>
-                                    <p class="panel-kicker">Conta</p>
-                                    <h3>Autenticação</h3>
+                                    <p class="panel-kicker">Acesso</p>
+                                    <div class="panel-title-row">
+                                        <h3>Conta</h3>
+                                        <span class="inline-status-badge" aria-label="App pronto para publicar">
+                                            <span aria-hidden="true">✓</span>
+                                            <span>App pronto para publicar</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -579,24 +585,20 @@
                                     </button>
                                 </form>
 
-                                <div class="stack-inline">
-                                    <button class="button" id="subscription-toggle-button" type="button">
+                                <div class="member-actions-primary">
+                                    <button class="button button-primary button-full" id="subscription-toggle-button" type="button">
                                         Alterar assinatura
                                     </button>
-                                    <button class="button button-ghost" id="refresh-profile-button" type="button">
+                                    <button class="button button-ghost button-full" id="refresh-profile-button" type="button">
                                         Atualizar perfil
                                     </button>
                                 </div>
 
-                                <button class="button button-danger" id="logout-button" type="button">Sair</button>
-                                <p class="hint">
-                                    O botão de assinatura atualiza o plano salvo no Supabase para validar os fluxos
-                                    `free` e `premium` durante os testes.
-                                </p>
-                                <p class="hint">
-                                    A exclusão completa da conta é o próximo passo seguro, porque no Supabase ela exige
-                                    ação server-side com chave protegida.
-                                </p>
+                                <!-- DEV NOTE: textos técnicos internos removidos da interface final -->
+
+                                <div class="member-auth-footer">
+                                    <button class="button button-subtle-link" id="logout-button" type="button">Sair</button>
+                                </div>
                             </div>
                         </section>
 
@@ -641,60 +643,84 @@
                                 <section class="instagram-helper">
                                     <div class="instagram-helper-head">
                                         <p class="panel-kicker">Instagram sem confusão</p>
-                                        <h4>Antes de conectar, confira em qual situação você está</h4>
                                     </div>
-                                    <p class="instagram-helper-copy">
-                                        O Instagram do Postara funciona melhor quando você entende primeiro se a conta já está pronta para publicar ou se ainda precisa virar conta profissional.
-                                    </p>
-                                    <div class="instagram-helper-choices">
-                                        <button class="button button-primary" id="instagram-help-pro-button" type="button">
-                                            Já tenho conta profissional
-                                        </button>
-                                        <button class="button button-ghost" id="instagram-help-unsure-button" type="button">
-                                            Não sei / quero conferir
-                                        </button>
-                                    </div>
-
-                                    <article class="instagram-help-view" id="instagram-help-view-pro">
-                                        <p class="instagram-help-label">Caminho rápido</p>
-                                        <h5>Se sua conta já é profissional, faça isso:</h5>
-                                        <ol class="instagram-help-steps">
-                                            <li>Confirme se o Instagram está ligado à sua Página do Facebook.</li>
-                                            <li>Clique em <strong>Conectar Instagram</strong> aqui no Postara.</li>
-                                            <li>Autorize a conta correta quando a Meta abrir a janela.</li>
-                                            <li>Volte ao app e veja se aparece algo como <strong>Página • @seuinstagram</strong>.</li>
-                                        </ol>
-                                        <div class="instagram-helper-note">
-                                            Dica: se você já conectou antes e deu algo estranho, desconecte e conecte novamente para a Meta pedir as permissões atualizadas.
-                                        </div>
-                                    </article>
-
-                                    <article class="instagram-help-view" id="instagram-help-view-unsure" hidden>
-                                        <p class="instagram-help-label">Confira primeiro</p>
-                                        <h5>Se você não sabe se a conta é profissional:</h5>
-                                        <ol class="instagram-help-steps">
-                                            <li>Abra o Instagram e entre no perfil que vai vender.</li>
-                                            <li>Toque em <strong>Editar perfil</strong> ou procure a área de <strong>Empresa</strong>.</li>
-                                            <li>Se aparecer opção para <strong>Mudar para conta profissional</strong>, faça essa troca.</li>
-                                            <li>Depois conecte essa conta à Página do Facebook que você usa no Postara.</li>
-                                            <li>Quando isso estiver feito, volte aqui e use o botão <strong>Já tenho conta profissional</strong>.</li>
-                                        </ol>
-                                        <div class="instagram-helper-note">
-                                            O Postara não exige que você saiba termos técnicos. O importante é a conta aparecer como <strong>profissional</strong> e estar ligada à sua página.
-                                        </div>
-                                    </article>
 
                                     <div class="faq-list instagram-helper-faq">
+                                        <details class="faq-item faq-item-guide" open>
+                                            <summary>
+                                                <span class="faq-summary-main">
+                                                    <span class="faq-summary-icon" aria-hidden="true">ℹ️</span>
+                                                    <span>Antes de conectar, confira em qual situação você está</span>
+                                                </span>
+                                            </summary>
+                                            <div class="instagram-helper-body">
+                                                <p class="instagram-helper-copy">
+                                                    O Instagram do Postara funciona melhor quando você entende primeiro se a conta já está pronta para publicar ou se ainda precisa virar conta profissional.
+                                                </p>
+                                                <div class="instagram-helper-choices">
+                                                    <button class="button button-primary" id="instagram-help-pro-button" type="button">
+                                                        Já tenho conta profissional
+                                                    </button>
+                                                    <button class="button button-ghost" id="instagram-help-unsure-button" type="button">
+                                                        Não sei / quero conferir
+                                                    </button>
+                                                </div>
+
+                                                <article class="instagram-help-view" id="instagram-help-view-pro">
+                                                    <p class="instagram-help-label">Caminho rápido</p>
+                                                    <h5>Se sua conta já é profissional, faça isso:</h5>
+                                                    <ol class="instagram-help-steps">
+                                                        <li>Confirme se o Instagram está ligado à sua Página do Facebook.</li>
+                                                        <li>Clique em <strong>Conectar Instagram</strong> aqui no Postara.</li>
+                                                        <li>Autorize a conta correta quando a Meta abrir a janela.</li>
+                                                        <li>Volte ao app e veja se aparece algo como <strong>Página • @seuinstagram</strong>.</li>
+                                                    </ol>
+                                                    <div class="instagram-helper-note">
+                                                        Dica: se você já conectou antes e deu algo estranho, desconecte e conecte novamente para a Meta pedir as permissões atualizadas.
+                                                    </div>
+                                                </article>
+
+                                                <article class="instagram-help-view" id="instagram-help-view-unsure" hidden>
+                                                    <p class="instagram-help-label">Confira primeiro</p>
+                                                    <h5>Se você não sabe se a conta é profissional:</h5>
+                                                    <ol class="instagram-help-steps">
+                                                        <li>Abra o Instagram e entre no perfil que vai vender.</li>
+                                                        <li>Toque em <strong>Editar perfil</strong> ou procure a área de <strong>Empresa</strong>.</li>
+                                                        <li>Se aparecer opção para <strong>Mudar para conta profissional</strong>, faça essa troca.</li>
+                                                        <li>Depois conecte essa conta à Página do Facebook que você usa no Postara.</li>
+                                                        <li>Quando isso estiver feito, volte aqui e use o botão <strong>Já tenho conta profissional</strong>.</li>
+                                                    </ol>
+                                                    <div class="instagram-helper-note">
+                                                        O Postara não exige que você saiba termos técnicos. O importante é a conta aparecer como <strong>profissional</strong> e estar ligada à sua página.
+                                                    </div>
+                                                </article>
+                                            </div>
+                                        </details>
                                         <details class="faq-item">
-                                            <summary>Por que o Instagram precisa da Página do Facebook?</summary>
+                                            <summary>
+                                                <span class="faq-summary-main">
+                                                    <span class="faq-summary-icon" aria-hidden="true">🔗</span>
+                                                    <span>Por que o Instagram precisa da Página do Facebook?</span>
+                                                </span>
+                                            </summary>
                                             <p>A Meta usa essa ligação para liberar publicação por API. Sem ela, o app até pode reconhecer a conta, mas não consegue postar com segurança.</p>
                                         </details>
                                         <details class="faq-item">
-                                            <summary>Preciso colocar URL pública da imagem?</summary>
+                                            <summary>
+                                                <span class="faq-summary-main">
+                                                    <span class="faq-summary-icon" aria-hidden="true">🖼️</span>
+                                                    <span>Preciso colocar URL pública da imagem?</span>
+                                                </span>
+                                            </summary>
                                             <p>Não. O Postara já envia a imagem para o storage do app e prepara tudo para o Instagram automaticamente.</p>
                                         </details>
                                         <details class="faq-item">
-                                            <summary>E se eu só quiser publicar no Facebook?</summary>
+                                            <summary>
+                                                <span class="faq-summary-main">
+                                                    <span class="faq-summary-icon" aria-hidden="true">👍</span>
+                                                    <span>E se eu só quiser publicar no Facebook?</span>
+                                                </span>
+                                            </summary>
                                             <p>Sem problema. O Facebook já funciona separado. O Instagram é um passo extra para quem quer reaproveitar a mesma legenda e foto no perfil.</p>
                                         </details>
                                     </div>

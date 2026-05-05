@@ -378,6 +378,17 @@ button {
     margin-bottom: 18px;
 }
 
+.panel-heading-inline {
+    align-items: flex-start;
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .panel-heading h3 {
     margin: 0;
     font-size: 24px;
@@ -476,6 +487,27 @@ button {
 
 .button-google:hover {
     border-color: #ffffff;
+}
+
+.button-full {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.button-subtle-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #8b90a3;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.button-subtle-link:hover {
+    transform: none;
+    border-color: transparent;
+    color: #b3b8c9;
 }
 
 .publish-confirm-layer {
@@ -732,6 +764,37 @@ button {
     padding: 16px;
     background: rgba(124, 140, 255, 0.08);
     border-color: rgba(124, 140, 255, 0.18);
+}
+
+.member-actions-primary {
+    display: grid;
+    gap: 8px;
+}
+
+.member-auth-footer {
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: flex-start;
+}
+
+.inline-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(43, 182, 115, 0.14);
+    border: 1px solid rgba(43, 182, 115, 0.34);
+    color: #d9f7e8;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.inline-status-badge span:first-child {
+    font-size: 13px;
 }
 
 .tip-list {
@@ -1237,6 +1300,12 @@ button {
     gap: 10px;
 }
 
+.instagram-helper-body {
+    display: grid;
+    gap: 14px;
+    padding-top: 14px;
+}
+
 .instagram-help-view {
     display: grid;
     gap: 10px;
@@ -1507,6 +1576,21 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+}
+
+.faq-summary-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.faq-summary-icon {
+    width: 18px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.7;
+    flex: 0 0 18px;
+    text-align: center;
 }
 
 .faq-item summary::-webkit-details-marker {
