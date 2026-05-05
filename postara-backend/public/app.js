@@ -103,7 +103,13 @@ const state = {
     publishState: {
         isLoading: false,
         results: [],
-        confirmationOpen: false
+        confirmationOpen: false,
+        status: 'idle',
+        message: ''
+    },
+    generateState: {
+        status: 'idle',
+        message: ''
     },
     publishDraft: createInitialPublishDraft(),
     onboarding: {
@@ -180,6 +186,7 @@ const elements = {
     socialDebugState: document.getElementById('social-debug-state'),
     generatorForm: document.getElementById('generator-form'),
     generateButton: document.getElementById('generate-button'),
+    generateFeedback: document.getElementById('generate-feedback'),
     generationModeSelect: document.getElementById('generation-mode-select'),
     generationModeHint: document.getElementById('generation-mode-hint'),
     generationPlanCallout: document.getElementById('generation-plan-callout'),
@@ -335,6 +342,16 @@ const getSelectedSocialConnection = () =>
     state.socialConnections.find((connection) => connection.id === state.publishDraft.connectionId) ||
     state.socialConnections[0] ||
     null;
+
+const setGenerateFeedback = (status = 'idle', message = '') => {
+    state.generateState.status = status;
+    state.generateState.message = message;
+};
+
+const setPublishFeedback = (status = 'idle', message = '') => {
+    state.publishState.status = status;
+    state.publishState.message = message;
+};
 
 const getSelectedPublishTargets = (selectedConnection = getSelectedSocialConnection()) => {
     const targets = [];
@@ -548,6 +565,68 @@ const renderPublishResults = () => {
                     `
                 )
                 .join('')}
+        </div>
+    `;
+};
+
+const renderGenerateFeedback = () => {
+    if (!elements.generateFeedback) {
+        return;
+    }
+
+    if (state.generateState.status === 'idle' || !state.generateState.message) {
+        elements.generateFeedback.hidden = true;
+        elements.generateFeedback.innerHTML = '';
+        return;
+    }
+
+    const labels = {
+        loading: 'Carregando',
+        success: 'Pronto',
+        error: 'Algo deu errado'
+    };
+
+    const icons = {
+        loading: '⏳',
+        success: '✅',
+        error: '❌'
+    };
+
+    elements.generateFeedback.hidden = false;
+    elements.generateFeedback.className = `action-feedback is-${state.generateState.status}`;
+    elements.generateFeedback.innerHTML = `
+        <div class="action-feedback-head">
+            <span class="action-feedback-icon">${icons[state.generateState.status] || '•'}</span>
+            <strong>${labels[state.generateState.status] || 'Aviso'}</strong>
+        </div>
+        <p>${escapeHtml(state.generateState.message)}</p>
+    `;
+};
+
+const renderPublishFeedback = () => {
+    if (state.publishState.status === 'idle' || !state.publishState.message) {
+        return '';
+    }
+
+    const labels = {
+        loading: 'Enviando',
+        success: 'Tudo certo',
+        error: 'Algo deu errado'
+    };
+
+    const icons = {
+        loading: '⏳',
+        success: '✅',
+        error: '❌'
+    };
+
+    return `
+        <div class="action-feedback is-${escapeHtml(state.publishState.status)}">
+            <div class="action-feedback-head">
+                <span class="action-feedback-icon">${escapeHtml(icons[state.publishState.status] || '•')}</span>
+                <strong>${escapeHtml(labels[state.publishState.status] || 'Aviso')}</strong>
+            </div>
+            <p>${escapeHtml(state.publishState.message)}</p>
         </div>
     `;
 };
@@ -782,6 +861,7 @@ const buildPublishPanelMarkup = () => {
                 ${state.publishState.isLoading ? 'Postando...' : 'Revisar antes de publicar'}
             </button>
 
+            ${renderPublishFeedback()}
             ${renderPublishResults()}
         </div>
     `;
@@ -1563,6 +1643,7 @@ const renderResult = (result, meta = null) => {
 
     renderDashboard();
     syncPublishConfirmation();
+    renderGenerateFeedback();
 };
 
 const renderAuthView = () => {
@@ -1990,6 +2071,8 @@ const handleLogout = async () => {
         state.socialConnections = [];
         state.publishState.results = [];
         state.publishState.confirmationOpen = false;
+        setPublishFeedback('idle', '');
+        setGenerateFeedback('idle', '');
         state.publishDraft = createInitialPublishDraft();
         resetHistoryState();
         renderResult(null);
@@ -2004,6 +2087,8 @@ const handleLogout = async () => {
 
 const handlePublishSelected = async () => {
     if (!state.currentResult) {
+        setPublishFeedback('error', 'Gere um conteúdo ou abra um salvo antes de publicar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Gere um conteúdo ou abra um salvo antes de publicar.', 'error');
         return;
     }
@@ -2011,6 +2096,8 @@ const handlePublishSelected = async () => {
     const selectedConnection = ensurePublishDraftConnection();
 
     if (!selectedConnection) {
+        setPublishFeedback('error', 'Conecte uma conta antes de tentar publicar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Conecte uma conta Meta antes de publicar.', 'error');
         return;
     }
@@ -2018,11 +2105,15 @@ const handlePublishSelected = async () => {
     const targets = getSelectedPublishTargets(selectedConnection);
 
     if (!targets.length) {
+        setPublishFeedback('error', 'Escolha Facebook, Instagram ou ambos antes de continuar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Selecione Facebook, Instagram ou ambos para publicar.', 'error');
         return;
     }
 
     if (targets.includes('instagram') && !state.publishDraft.mediaUrl.trim()) {
+        setPublishFeedback('error', 'Para publicar no Instagram, escolha uma imagem antes de continuar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Para Instagram, envie uma imagem antes de publicar.', 'error');
         return;
     }
@@ -2032,6 +2123,8 @@ const handlePublishSelected = async () => {
 
 const confirmPublishSelected = async () => {
     if (!state.currentResult) {
+        setPublishFeedback('error', 'Gere um conteúdo ou abra um salvo antes de publicar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Gere um conteúdo ou abra um salvo antes de publicar.', 'error');
         return;
     }
@@ -2040,6 +2133,8 @@ const confirmPublishSelected = async () => {
 
     if (!selectedConnection) {
         closePublishConfirmation();
+        setPublishFeedback('error', 'Conecte uma conta antes de tentar publicar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Conecte uma conta Meta antes de publicar.', 'error');
         return;
     }
@@ -2048,6 +2143,8 @@ const confirmPublishSelected = async () => {
 
     if (!targets.length) {
         closePublishConfirmation();
+        setPublishFeedback('error', 'Escolha Facebook, Instagram ou ambos antes de continuar.');
+        renderResult(state.currentResult, state.currentHistoryMeta);
         setToast('Selecione Facebook, Instagram ou ambos para publicar.', 'error');
         return;
     }
@@ -2055,6 +2152,7 @@ const confirmPublishSelected = async () => {
     try {
         state.publishState.isLoading = true;
         state.publishState.results = [];
+        setPublishFeedback('loading', 'Estamos enviando seu post. Isso pode levar alguns segundos.');
         closePublishConfirmation();
         renderResult(state.currentResult, state.currentHistoryMeta);
 
@@ -2082,6 +2180,12 @@ const confirmPublishSelected = async () => {
                     ? 'Post enviado para o Instagram com sucesso.'
                     : 'Post enviado para o Facebook com sucesso.'
         }));
+        setPublishFeedback(
+            'success',
+            targets.length === 2
+                ? 'Seu post foi enviado para Facebook e Instagram.'
+                : `Seu post foi enviado para ${targets[0] === 'instagram' ? 'Instagram' : 'Facebook'}.`
+        );
 
         renderResult(state.currentResult, state.currentHistoryMeta);
         setToast(
@@ -2090,15 +2194,17 @@ const confirmPublishSelected = async () => {
                 : `Post enviado para ${targets[0] === 'instagram' ? 'Instagram' : 'Facebook'}.`
         );
     } catch (error) {
+        const publishErrorMessage = getErrorMessage(error, 'Não foi possível publicar agora.');
         state.publishState.results = [
             {
                 networkLabel: 'Publicação',
                 status: 'error',
-                message: getErrorMessage(error, 'Não foi possível publicar agora.')
+                message: publishErrorMessage
             }
         ];
+        setPublishFeedback('error', publishErrorMessage);
         renderResult(state.currentResult, state.currentHistoryMeta);
-        setToast(getErrorMessage(error, 'Não foi possível publicar agora.'), 'error');
+        setToast(publishErrorMessage, 'error');
     } finally {
         state.publishState.isLoading = false;
         renderResult(state.currentResult, state.currentHistoryMeta);
@@ -2290,6 +2396,7 @@ const handleGenerateSubmit = async (event) => {
     try {
         setLoading(elements.generateButton, true, 'Gerando...');
         state.publishState.results = [];
+        setGenerateFeedback('loading', 'Estamos montando seu post. Aguarde só um instante.');
         state.currentRequestContext = requestContext;
         const result = await requestGeneration(requestContext, {
             optionCount: getRequestedOptionCount(false)
@@ -2301,12 +2408,19 @@ const handleGenerateSubmit = async (event) => {
 
         setCurrentView('generate');
         renderResult(result, historyEntry ? { historyId: historyEntry.id, createdAt: historyEntry.createdAt } : null);
+        setGenerateFeedback(
+            'success',
+            result.options.length > 1
+                ? 'Pronto! Criamos 3 opções para você comparar e escolher a melhor.'
+                : 'Pronto! Seu post foi criado e já está aqui ao lado para revisar.'
+        );
         setToast(
             result.options.length > 1
                 ? `3 opções criadas via ${result.source}.`
                 : `Conteúdo gerado via ${result.source}.`
         );
     } catch (error) {
+        setGenerateFeedback('error', getErrorMessage(error, 'Não foi possível gerar o conteúdo agora.'));
         setToast(getErrorMessage(error, 'Não foi possível gerar o conteúdo.'), 'error');
     } finally {
         setLoading(elements.generateButton, false);
@@ -2314,6 +2428,9 @@ const handleGenerateSubmit = async (event) => {
 };
 
 const handleGeneratorDraftChange = () => {
+    if (state.generateState.status !== 'idle') {
+        setGenerateFeedback('idle', '');
+    }
     renderResult(state.currentResult, state.currentHistoryMeta);
 };
 

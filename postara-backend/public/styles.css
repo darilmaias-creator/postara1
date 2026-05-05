@@ -1016,6 +1016,48 @@ button {
     line-height: 1.6;
 }
 
+.action-feedback {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.action-feedback-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-feedback-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.action-feedback p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.action-feedback.is-loading {
+    border-color: rgba(124, 140, 255, 0.32);
+    background: rgba(124, 140, 255, 0.08);
+}
+
+.action-feedback.is-success {
+    border-color: rgba(43, 182, 115, 0.34);
+    background: rgba(43, 182, 115, 0.08);
+}
+
+.action-feedback.is-error {
+    border-color: rgba(255, 107, 107, 0.34);
+    background: rgba(255, 107, 107, 0.08);
+}
+
 .result-view h3 {
     margin: 0;
     font-size: 28px;
