@@ -143,6 +143,9 @@ const elements = {
     accountNavSummary: document.getElementById('account-nav-summary'),
     views: [...document.querySelectorAll('[data-view]')],
     resultSlots: [...document.querySelectorAll('[data-result-slot]')],
+    dashboardGreeting: document.getElementById('dashboard-greeting'),
+    dashboardSubtitle: document.getElementById('dashboard-subtitle'),
+    dashboardProgressNote: document.getElementById('dashboard-progress-note'),
     dashboardAuthStatus: document.getElementById('dashboard-auth-status'),
     dashboardPlanStatus: document.getElementById('dashboard-plan-status'),
     dashboardHistoryStatus: document.getElementById('dashboard-history-status'),
@@ -250,6 +253,16 @@ const formatGenerationModeLabel = (mode = 'short') => {
     };
 
     return labels[mode] || mode;
+};
+
+const getDisplayFirstName = (name = '') => {
+    const normalizedName = String(name || '').trim();
+
+    if (!normalizedName) {
+        return '';
+    }
+
+    return normalizedName.split(/\s+/)[0] || normalizedName;
 };
 
 const getResultOptions = (result) => {
@@ -1125,23 +1138,25 @@ const mapHistoryRow = (row) => ({
 });
 
 const renderDeploymentNotice = () => {
+    elements.deploymentNotice.hidden = false;
+
     if (!hasSupabaseConfig) {
-        elements.deploymentNotice.hidden = false;
-        elements.deploymentNotice.textContent =
-            'O app ainda não foi ligado ao Supabase nesta tela. Sem isso, entrar na conta e salvar histórico não funcionam.';
+        elements.deploymentNotice.dataset.status = 'warning';
+        elements.deploymentNotice.setAttribute('aria-label', 'Conexão parcial do app.');
+        elements.deploymentNotice.dataset.tooltip = 'Conexão parcial do app.';
         return;
     }
 
     if (API_BASE_URL) {
-        elements.deploymentNotice.hidden = false;
-        elements.deploymentNotice.textContent =
-            `Sua conta e seu histórico já estão prontos. A criação dos posts está conectada ao servidor em ${API_BASE_URL}.`;
+        elements.deploymentNotice.dataset.status = 'success';
+        elements.deploymentNotice.setAttribute('aria-label', 'App conectado e pronto para publicar.');
+        elements.deploymentNotice.dataset.tooltip = 'App conectado e pronto para publicar.';
         return;
     }
 
-    elements.deploymentNotice.hidden = false;
-    elements.deploymentNotice.textContent =
-        'Sua conta e seu histórico já estão prontos. A criação dos posts usa a API da própria Vercel quando a chave Gemini estiver configurada.';
+    elements.deploymentNotice.dataset.status = 'success';
+    elements.deploymentNotice.setAttribute('aria-label', 'App conectado e pronto para publicar.');
+    elements.deploymentNotice.dataset.tooltip = 'App conectado e pronto para publicar.';
 };
 
 const apiRequest = async (path, options = {}) => {
@@ -1422,6 +1437,29 @@ const applyPlanToModeSelector = () => {
 };
 
 const renderDashboard = () => {
+    if (!state.user) {
+        elements.dashboardGreeting.textContent = 'Olá! Por onde começar?';
+    } else {
+        const firstName = getDisplayFirstName(state.user.name);
+        elements.dashboardGreeting.textContent = firstName
+            ? `Olá, ${firstName}! Por onde você quer começar?`
+            : 'Olá! Por onde começar?';
+    }
+
+    elements.dashboardSubtitle.textContent =
+        'Gere um post, reveja seu histórico ou conecte suas redes.';
+
+    if (!state.user) {
+        elements.dashboardProgressNote.hidden = true;
+        elements.dashboardProgressNote.textContent = '';
+    } else if (state.history.total > 0) {
+        elements.dashboardProgressNote.hidden = false;
+        elements.dashboardProgressNote.textContent = `🎉 Você já gerou ${state.history.total} post(s) pelo Postara!`;
+    } else {
+        elements.dashboardProgressNote.hidden = false;
+        elements.dashboardProgressNote.textContent = '👋 Gere seu primeiro post agora e veja o resultado aqui.';
+    }
+
     if (!state.user) {
         elements.dashboardAuthStatus.textContent = 'Você ainda não está logado.';
         elements.dashboardPlanStatus.textContent =

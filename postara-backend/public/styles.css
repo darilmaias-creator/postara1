@@ -219,21 +219,70 @@ button {
     margin: 0;
 }
 
-.deployment-notice {
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(247, 185, 85, 0.28);
-    background: rgba(247, 185, 85, 0.08);
-    color: #f6deb1;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
 .workspace-actions {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.app-status-indicator {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-status-indicator:hover {
+    transform: none;
+}
+
+.app-status-indicator::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: max-content;
+    max-width: 240px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(11, 14, 22, 0.96);
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 15;
+}
+
+.app-status-indicator:hover::after,
+.app-status-indicator:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.app-status-indicator-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--success);
+    box-shadow: 0 0 0 0 rgba(43, 182, 115, 0.4);
+    animation: app-status-pulse 1.8s ease-out infinite;
+}
+
+.app-status-indicator[data-status='warning'] .app-status-indicator-dot {
+    background: #f7b955;
+    box-shadow: 0 0 0 0 rgba(247, 185, 85, 0.35);
 }
 
 .workspace-content {
@@ -251,6 +300,8 @@ button {
 
 .view-grid-dashboard {
     grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
 }
 
 .view-grid-split {
@@ -285,6 +336,17 @@ button {
     font-size: clamp(26px, 3vw, 34px);
 }
 
+.spotlight-subtitle {
+    opacity: 0.6;
+}
+
+.dashboard-progress-note {
+    margin: 0;
+    color: var(--primary-soft);
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
 .spotlight-actions {
     display: flex;
     flex-wrap: wrap;
@@ -294,6 +356,10 @@ button {
 
 .summary-panel {
     grid-column: span 4;
+    min-height: 220px;
+    height: 100%;
+    display: grid;
+    align-content: start;
 }
 
 .onboarding-panel-copy {
@@ -795,6 +861,18 @@ button {
 
 .inline-status-badge span:first-child {
     font-size: 13px;
+}
+
+@keyframes app-status-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(43, 182, 115, 0.36);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(43, 182, 115, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(43, 182, 115, 0);
+    }
 }
 
 .tip-list {

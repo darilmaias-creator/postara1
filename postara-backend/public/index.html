@@ -68,9 +68,18 @@
                     <p class="workspace-copy" id="view-description">
                         Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.
                     </p>
-                    <div class="deployment-notice" id="deployment-notice" hidden></div>
                 </div>
                 <div class="workspace-actions">
+                    <button
+                        class="app-status-indicator"
+                        id="deployment-notice"
+                        type="button"
+                        aria-label="App conectado e pronto para publicar."
+                        data-tooltip="App conectado e pronto para publicar."
+                        hidden
+                    >
+                        <span class="app-status-indicator-dot" aria-hidden="true"></span>
+                    </button>
                     <button class="button button-ghost" data-go-view="account" type="button">Conta</button>
                     <button class="button button-primary" data-go-view="generate" type="button">Novo post</button>
                 </div>
@@ -81,17 +90,20 @@
                     <div class="view-grid view-grid-dashboard">
                         <section class="panel spotlight-panel">
                             <p class="panel-kicker">Comece aqui</p>
-                            <h3>Agora o app respira melhor</h3>
-                            <p class="spotlight-copy">
-                                Separamos o fluxo em áreas claras para você testar no celular e no desktop
-                                sem a sensação de ter tudo disputando espaço ao mesmo tempo.
+                            <h3 id="dashboard-greeting">Olá! Por onde começar?</h3>
+                            <p class="spotlight-copy spotlight-subtitle" id="dashboard-subtitle">
+                                Gere um post, reveja seu histórico ou conecte suas redes.
                             </p>
+                            <p class="dashboard-progress-note" id="dashboard-progress-note" hidden></p>
                             <div class="spotlight-actions">
                                 <button class="button button-primary" data-go-view="generate" type="button">
                                     Gerar conteúdo
                                 </button>
                                 <button class="button button-ghost" data-go-view="history" type="button">
                                     Ver histórico
+                                </button>
+                                <button class="button button-ghost" data-go-view="photo-guide" type="button">
+                                    Dicas de foto
                                 </button>
                             </div>
                         </section>
