@@ -878,12 +878,62 @@ button {
     background: rgba(255, 255, 255, 0.03);
 }
 
-.social-debug-state pre {
+.social-debug-summary {
+    display: grid;
+    gap: 12px;
+}
+
+.social-debug-card {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.social-debug-card.is-success {
+    border-color: rgba(43, 182, 115, 0.34);
+    background: rgba(43, 182, 115, 0.08);
+}
+
+.social-debug-card.is-error {
+    border-color: rgba(255, 107, 107, 0.34);
+    background: rgba(255, 107, 107, 0.08);
+}
+
+.social-debug-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.social-debug-card-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.social-debug-card p,
+.social-debug-summary-note {
     margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
     color: var(--muted);
-    font: 500 13px/1.65 'IBM Plex Mono', monospace;
+    line-height: 1.6;
+}
+
+.social-debug-summary-note {
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px dashed var(--border);
+}
+
+.social-debug-summary-note.is-success {
+    border-color: rgba(43, 182, 115, 0.34);
+    color: #dff9ed;
+}
+
+.social-debug-summary-note.is-error {
+    border-color: rgba(255, 107, 107, 0.34);
+    color: #ffd8d8;
 }
 
 .social-connection-card,

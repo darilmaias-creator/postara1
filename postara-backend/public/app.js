@@ -497,57 +497,117 @@ const renderSocialDebug = () => {
         return;
     }
 
+    console.log('Meta debug raw', state.socialDebug);
+
     const snapshots = Array.isArray(state.socialDebug.providerSnapshots) && state.socialDebug.providerSnapshots.length
         ? state.socialDebug.providerSnapshots
         : [state.socialDebug];
 
-    const debugText = snapshots
-        .map((snapshot) => {
-            const grantedPermissions = Array.isArray(snapshot.grantedPermissions)
-                ? snapshot.grantedPermissions.map((item) => `${item.permission}: ${item.status}`).join('\n')
-                : 'Nenhuma permissão retornada.';
+    const grantedPermissions = new Set(
+        snapshots.flatMap((snapshot) =>
+            Array.isArray(snapshot.grantedPermissions)
+                ? snapshot.grantedPermissions
+                      .filter((item) => item?.status === 'granted' && item?.permission)
+                      .map((item) => item.permission)
+                : []
+        )
+    );
 
-            const rawAccounts = Array.isArray(snapshot.rawAccounts) ? snapshot.rawAccounts : [];
-            const rawAccountsSummary = rawAccounts.length
-                ? rawAccounts
-                      .map((account) => {
-                          const instagramHandle =
-                              account.instagramBusinessAccount?.username || account.connectedInstagramAccount?.username || null;
-                          const tasks = Array.isArray(account.tasks) && account.tasks.length ? account.tasks.join(', ') : 'sem tasks';
-                          return `- ${account.name} (${account.id})${instagramHandle ? ` • Instagram: @${instagramHandle}` : ' • sem Instagram'} • tasks: ${tasks}`;
-                      })
-                      .join('\n')
-                : 'Nenhuma página devolvida pela Meta.';
+    const allConnections = snapshots.flatMap((snapshot) =>
+        Array.isArray(snapshot.normalizedConnections) ? snapshot.normalizedConnections : []
+    );
 
-            const normalizedConnections = Array.isArray(snapshot.normalizedConnections)
-                ? snapshot.normalizedConnections
-                      .map(
-                          (connection) =>
-                              `- ${connection.facebookPageName}${connection.instagramUsername ? ` • @${connection.instagramUsername}` : ' • sem Instagram'}`
-                      )
-                      .join('\n')
-                : 'Nenhuma conexão normalizada.';
+    const allRawAccounts = snapshots.flatMap((snapshot) => (Array.isArray(snapshot.rawAccounts) ? snapshot.rawAccounts : []));
 
-            return [
-                `Teste de conexão (${snapshot.providerLabel || 'facebook'})`,
-                `Perfil retornado: ${snapshot.profile?.name || 'desconhecido'} (${snapshot.profile?.id || 'sem id'})`,
-                '',
-                `Permissões:`,
-                grantedPermissions || 'Nenhuma permissão retornada.',
-                '',
-                `Páginas brutas devolvidas pela Meta (${snapshot.summary?.rawAccountCount || 0}):`,
-                rawAccountsSummary,
-                '',
-                `Conexões que o Postara conseguiu montar (${snapshot.summary?.normalizedConnectionCount || 0}):`,
-                normalizedConnections || 'Nenhuma conexão normalizada.',
-                '',
-                `Instagram detectado em ${snapshot.summary?.instagramConnectionCount || 0} conexão(ões).`
-            ].join('\n');
-        })
-        .join('\n\n------------------------------\n\n');
+    const facebookConnection =
+        allConnections.find((connection) => connection?.facebookPageId || connection?.facebookPageName) ||
+        null;
+
+    const instagramConnection =
+        allConnections.find((connection) => connection?.instagramBusinessId || connection?.instagramUsername) || null;
+
+    const fallbackInstagramAccount = allRawAccounts.find(
+        (account) =>
+            account?.instagramBusinessAccount?.username ||
+            account?.connectedInstagramAccount?.username
+    );
+
+    const facebookPageName = facebookConnection?.facebookPageName || allRawAccounts[0]?.name || null;
+    const instagramUsername =
+        instagramConnection?.instagramUsername ||
+        fallbackInstagramAccount?.instagramBusinessAccount?.username ||
+        fallbackInstagramAccount?.connectedInstagramAccount?.username ||
+        null;
+
+    const requiredPermissions = [
+        {
+            key: 'pages_manage_posts',
+            label: 'publicar no Facebook'
+        },
+        {
+            key: 'instagram_content_publish',
+            label: 'publicar no Instagram'
+        }
+    ];
+
+    const missingPermission = requiredPermissions.find((permission) => !grantedPermissions.has(permission.key)) || null;
+    const permissionsOk = !missingPermission;
+    const facebookOk = Boolean(facebookConnection?.facebookPageId || facebookPageName);
+    const instagramOk = Boolean(instagramConnection?.instagramBusinessId || instagramUsername);
+    const everythingOk = facebookOk && instagramOk && permissionsOk;
+
+    const cards = [
+        {
+            title: 'Facebook',
+            status: facebookOk ? 'success' : 'error',
+            icon: facebookOk ? '✅' : '❌',
+            message: facebookOk
+                ? `Página ${facebookPageName} pronta para publicar.`
+                : 'Página do Facebook não encontrada. Conecte novamente a Meta e selecione a página correta.'
+        },
+        {
+            title: 'Instagram',
+            status: instagramOk ? 'success' : 'error',
+            icon: instagramOk ? '✅' : '❌',
+            message: instagramOk
+                ? `Perfil @${instagramUsername} vinculado com sucesso.`
+                : 'Instagram não encontrado. Verifique se a conta é profissional.'
+        },
+        {
+            title: 'Permissões',
+            status: permissionsOk ? 'success' : 'error',
+            icon: permissionsOk ? '✅' : '❌',
+            message: permissionsOk
+                ? 'Permissões concedidas.'
+                : `Permissão ausente: ${missingPermission.label}.`
+        }
+    ];
 
     elements.socialDebugState.hidden = false;
-    elements.socialDebugState.innerHTML = `<pre>${escapeHtml(debugText)}</pre>`;
+    elements.socialDebugState.innerHTML = `
+        <div class="social-debug-summary">
+            ${cards
+                .map(
+                    (card) => `
+                        <article class="social-debug-card is-${card.status}">
+                            <div class="social-debug-card-head">
+                                <span class="social-debug-card-icon" aria-hidden="true">${card.icon}</span>
+                                <strong>${escapeHtml(card.title)}</strong>
+                            </div>
+                            <p>${escapeHtml(card.message)}</p>
+                        </article>
+                    `
+                )
+                .join('')}
+            <div class="social-debug-summary-note is-${everythingOk ? 'success' : 'error'}">
+                ${
+                    everythingOk
+                        ? 'Tudo certo! Você pode publicar pelo Postara.'
+                        : 'Algo precisa ser ajustado. Desconecte e conecte novamente a Meta.'
+                }
+            </div>
+        </div>
+    `;
 };
 
 const renderPublishResults = () => {
