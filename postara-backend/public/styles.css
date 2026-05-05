@@ -489,6 +489,10 @@ button {
     backdrop-filter: blur(10px);
 }
 
+.publish-confirm-layer[hidden] {
+    display: none !important;
+}
+
 .publish-confirm-card {
     width: min(920px, 100%);
     max-height: min(88vh, 980px);
