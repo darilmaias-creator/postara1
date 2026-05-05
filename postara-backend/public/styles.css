@@ -478,6 +478,121 @@ button {
     border-color: #ffffff;
 }
 
+.publish-confirm-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(6, 8, 18, 0.76);
+    backdrop-filter: blur(10px);
+}
+
+.publish-confirm-card {
+    width: min(920px, 100%);
+    max-height: min(88vh, 980px);
+    overflow: auto;
+    display: grid;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: #161a25;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+}
+
+.publish-confirm-head,
+.publish-confirm-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.publish-confirm-body,
+.publish-confirm-summary,
+.publish-confirm-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.publish-confirm-summary h3,
+.publish-confirm-summary p {
+    margin: 0;
+}
+
+.publish-confirm-summary p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.publish-confirm-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.publish-confirm-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.publish-confirm-network-card {
+    display: grid;
+    gap: 12px;
+}
+
+.publish-confirm-network-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.publish-confirm-network-id {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.publish-confirm-post-card {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.publish-confirm-post-top {
+    display: grid;
+    gap: 2px;
+}
+
+.publish-confirm-post-top strong {
+    font-size: 15px;
+}
+
+.publish-confirm-post-top span,
+.publish-confirm-post-text {
+    color: var(--muted);
+}
+
+.publish-confirm-post-text {
+    margin: 0;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.publish-confirm-post-image {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    object-fit: cover;
+    background: rgba(0, 0, 0, 0.2);
+}
+
 .onboarding-layer {
     position: fixed;
     right: 24px;
@@ -1404,6 +1519,8 @@ button {
     .stack-inline,
     .spotlight-actions,
     .instagram-helper-choices,
+    .publish-confirm-head,
+    .publish-confirm-actions,
     .plan-callout {
         flex-direction: column;
         align-items: stretch;

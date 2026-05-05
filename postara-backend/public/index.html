@@ -719,6 +719,22 @@
     </div>
 
     <div class="toast" id="toast" hidden></div>
+    <div class="publish-confirm-layer" id="publish-confirm-layer" hidden>
+        <div class="publish-confirm-card" role="dialog" aria-modal="true" aria-labelledby="publish-confirm-title">
+            <div class="publish-confirm-head">
+                <div>
+                    <p class="panel-kicker">Confirmação</p>
+                    <h3 id="publish-confirm-title">Confira antes de publicar</h3>
+                </div>
+                <button class="button button-ghost" id="publish-confirm-cancel" type="button">Voltar</button>
+            </div>
+            <div class="publish-confirm-body" id="publish-confirm-body"></div>
+            <div class="publish-confirm-actions">
+                <button class="button button-ghost" id="publish-confirm-cancel-footer" type="button">Cancelar</button>
+                <button class="button button-primary" id="publish-confirm-submit" type="button">Confirmar e publicar</button>
+            </div>
+        </div>
+    </div>
     <div class="onboarding-layer" id="onboarding-layer" hidden>
         <div class="onboarding-card" aria-live="polite" aria-label="Tutorial inicial do Postara">
             <div class="onboarding-card-topline">

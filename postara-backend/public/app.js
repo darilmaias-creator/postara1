@@ -102,7 +102,8 @@ const state = {
     },
     publishState: {
         isLoading: false,
-        results: []
+        results: [],
+        confirmationOpen: false
     },
     publishDraft: createInitialPublishDraft(),
     onboarding: {
@@ -205,7 +206,12 @@ const elements = {
     instagramHelpProButton: document.getElementById('instagram-help-pro-button'),
     instagramHelpUnsureButton: document.getElementById('instagram-help-unsure-button'),
     instagramHelpViewPro: document.getElementById('instagram-help-view-pro'),
-    instagramHelpViewUnsure: document.getElementById('instagram-help-view-unsure')
+    instagramHelpViewUnsure: document.getElementById('instagram-help-view-unsure'),
+    publishConfirmLayer: document.getElementById('publish-confirm-layer'),
+    publishConfirmBody: document.getElementById('publish-confirm-body'),
+    publishConfirmCancel: document.getElementById('publish-confirm-cancel'),
+    publishConfirmCancelFooter: document.getElementById('publish-confirm-cancel-footer'),
+    publishConfirmSubmit: document.getElementById('publish-confirm-submit')
 };
 
 const escapeHtml = (value = '') =>
@@ -329,6 +335,20 @@ const getSelectedSocialConnection = () =>
     state.socialConnections.find((connection) => connection.id === state.publishDraft.connectionId) ||
     state.socialConnections[0] ||
     null;
+
+const getSelectedPublishTargets = (selectedConnection = getSelectedSocialConnection()) => {
+    const targets = [];
+
+    if (state.publishDraft.facebook && selectedConnection?.supportsFacebook) {
+        targets.push('facebook');
+    }
+
+    if (state.publishDraft.instagram && selectedConnection?.supportsInstagram) {
+        targets.push('instagram');
+    }
+
+    return targets;
+};
 
 const resetPublishMediaDraft = () => {
     state.publishDraft.mediaUrl = '';
@@ -532,6 +552,106 @@ const renderPublishResults = () => {
     `;
 };
 
+const buildPublishConfirmationMarkup = () => {
+    if (!state.currentResult) {
+        return '';
+    }
+
+    const selectedConnection = getSelectedSocialConnection();
+    const selectedOption = state.currentResult;
+    const targets = getSelectedPublishTargets(selectedConnection);
+    const captionText = state.currentResult.description || buildPostReadyText(selectedOption);
+    const hasImage = Boolean(state.publishDraft.mediaPreviewUrl);
+
+    if (!selectedConnection || !targets.length) {
+        return '';
+    }
+
+    const destinationLabel =
+        targets.length === 2
+            ? 'Facebook e Instagram'
+            : targets[0] === 'instagram'
+            ? 'Instagram'
+            : 'Facebook';
+
+    const buildNetworkPreviewCard = (network) => {
+        const isInstagram = network === 'instagram';
+        const networkLabel = isInstagram ? 'Instagram' : 'Facebook';
+        const identity = isInstagram
+            ? `@${selectedConnection.instagramUsername || 'sua_conta'}`
+            : selectedConnection.facebookPageName;
+        const imageMarkup = hasImage
+            ? `<img class="publish-confirm-post-image" src="${escapeHtml(
+                  state.publishDraft.mediaPreviewUrl
+              )}" alt="Prévia da imagem escolhida para a postagem" />`
+            : '';
+
+        return `
+            <article class="publish-confirm-network-card">
+                <div class="publish-confirm-network-head">
+                    <span class="badge badge-muted">${escapeHtml(networkLabel)}</span>
+                    <span class="publish-confirm-network-id">${escapeHtml(identity)}</span>
+                </div>
+                <div class="publish-confirm-post-card">
+                    <div class="publish-confirm-post-top">
+                        <strong>${escapeHtml(identity)}</strong>
+                        <span>${escapeHtml(selectedConnection.facebookPageName)}</span>
+                    </div>
+                    <p class="publish-confirm-post-text">${escapeHtml(captionText)}</p>
+                    ${imageMarkup}
+                </div>
+            </article>
+        `;
+    };
+
+    return `
+        <div class="publish-confirm-summary">
+            <span class="badge">Revisão antes de publicar</span>
+            <h3>Confira como o post vai sair</h3>
+            <p>
+                Conta escolhida: <strong>${escapeHtml(selectedConnection.facebookPageName)}</strong> ·
+                Destino: <strong>${escapeHtml(destinationLabel)}</strong>
+            </p>
+        </div>
+        <div class="publish-confirm-meta">
+            <span class="badge badge-muted">${escapeHtml(selectedOption.title)}</span>
+            ${
+                hasImage
+                    ? '<span class="badge badge-muted">Com imagem</span>'
+                    : '<span class="badge badge-muted">Somente texto</span>'
+            }
+        </div>
+        <div class="publish-confirm-grid">
+            ${targets.map((target) => buildNetworkPreviewCard(target)).join('')}
+        </div>
+    `;
+};
+
+const syncPublishConfirmation = () => {
+    if (!elements.publishConfirmLayer || !elements.publishConfirmBody) {
+        return;
+    }
+
+    elements.publishConfirmLayer.hidden = !state.publishState.confirmationOpen;
+
+    if (!state.publishState.confirmationOpen) {
+        elements.publishConfirmBody.innerHTML = '';
+        return;
+    }
+
+    elements.publishConfirmBody.innerHTML = buildPublishConfirmationMarkup();
+};
+
+const closePublishConfirmation = () => {
+    state.publishState.confirmationOpen = false;
+    syncPublishConfirmation();
+};
+
+const openPublishConfirmation = () => {
+    state.publishState.confirmationOpen = true;
+    syncPublishConfirmation();
+};
+
 const buildPublishPanelMarkup = () => {
     if (!state.currentResult) {
         return '';
@@ -659,7 +779,7 @@ const buildPublishPanelMarkup = () => {
             }
 
             <button class="button button-primary" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
-                ${state.publishState.isLoading ? 'Postando...' : 'Postar descrição selecionada'}
+                ${state.publishState.isLoading ? 'Postando...' : 'Revisar antes de publicar'}
             </button>
 
             ${renderPublishResults()}
@@ -1442,6 +1562,7 @@ const renderResult = (result, meta = null) => {
     });
 
     renderDashboard();
+    syncPublishConfirmation();
 };
 
 const renderAuthView = () => {
@@ -1868,6 +1989,7 @@ const handleLogout = async () => {
         state.currentRequestContext = null;
         state.socialConnections = [];
         state.publishState.results = [];
+        state.publishState.confirmationOpen = false;
         state.publishDraft = createInitialPublishDraft();
         resetHistoryState();
         renderResult(null);
@@ -1893,15 +2015,7 @@ const handlePublishSelected = async () => {
         return;
     }
 
-    const targets = [];
-
-    if (state.publishDraft.facebook && selectedConnection.supportsFacebook) {
-        targets.push('facebook');
-    }
-
-    if (state.publishDraft.instagram && selectedConnection.supportsInstagram) {
-        targets.push('instagram');
-    }
+    const targets = getSelectedPublishTargets(selectedConnection);
 
     if (!targets.length) {
         setToast('Selecione Facebook, Instagram ou ambos para publicar.', 'error');
@@ -1913,9 +2027,35 @@ const handlePublishSelected = async () => {
         return;
     }
 
+    openPublishConfirmation();
+};
+
+const confirmPublishSelected = async () => {
+    if (!state.currentResult) {
+        setToast('Gere um conteúdo ou abra um salvo antes de publicar.', 'error');
+        return;
+    }
+
+    const selectedConnection = ensurePublishDraftConnection();
+
+    if (!selectedConnection) {
+        closePublishConfirmation();
+        setToast('Conecte uma conta Meta antes de publicar.', 'error');
+        return;
+    }
+
+    const targets = getSelectedPublishTargets(selectedConnection);
+
+    if (!targets.length) {
+        closePublishConfirmation();
+        setToast('Selecione Facebook, Instagram ou ambos para publicar.', 'error');
+        return;
+    }
+
     try {
         state.publishState.isLoading = true;
         state.publishState.results = [];
+        closePublishConfirmation();
         renderResult(state.currentResult, state.currentHistoryMeta);
 
         const payload = await apiRequest('/api/social/publish', {
@@ -2456,6 +2596,14 @@ const wireEvents = () => {
         state.instagramHelpMode = 'unsure';
         renderInstagramHelper();
         elements.instagramHelpViewUnsure.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    elements.publishConfirmCancel.addEventListener('click', closePublishConfirmation);
+    elements.publishConfirmCancelFooter.addEventListener('click', closePublishConfirmation);
+    elements.publishConfirmSubmit.addEventListener('click', confirmPublishSelected);
+    elements.publishConfirmLayer.addEventListener('click', (event) => {
+        if (event.target === elements.publishConfirmLayer) {
+            closePublishConfirmation();
+        }
     });
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.generatorForm.addEventListener('input', handleGeneratorDraftChange);
