@@ -984,6 +984,38 @@ button {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
 }
 
+.context-tip-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.context-tip-copy {
+    display: grid;
+    gap: 8px;
+}
+
+.context-tip-title,
+.context-tip-text {
+    margin: 0;
+}
+
+.context-tip-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.context-tip-text {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
 .plan-callout {
     display: flex;
     justify-content: space-between;
@@ -1564,6 +1596,7 @@ button {
     .pagination,
     .stack-inline,
     .spotlight-actions,
+    .context-tip-card,
     .instagram-helper-choices,
     .publish-confirm-head,
     .publish-confirm-actions,

@@ -53,10 +53,6 @@
                     <span class="nav-link-label">Histórico</span>
                     <span class="nav-link-copy">Abrir posts salvos</span>
                 </button>
-                <button class="nav-link" data-view-target="photo-guide" type="button">
-                    <span class="nav-link-label">Fotos</span>
-                    <span class="nav-link-copy">Dúvidas e ideias para fotografar melhor</span>
-                </button>
                 <button class="nav-link" data-view-target="account" type="button">
                     <span class="nav-link-label">Conta</span>
                     <span class="nav-link-copy" id="account-nav-summary">Entrar e gerenciar plano</span>
@@ -96,9 +92,6 @@
                                 </button>
                                 <button class="button button-ghost" data-go-view="history" type="button">
                                     Ver histórico
-                                </button>
-                                <button class="button button-ghost" data-go-view="photo-guide" type="button">
-                                    Dicas de foto
                                 </button>
                             </div>
                         </section>
@@ -219,6 +212,19 @@
                                     Dica rápida: conte do que o produto é feito, tamanho, cor, acabamento, detalhes e para que ele serve.
                                     Quanto mais claro você for aqui, melhor a IA monta o texto do post.
                                 </p>
+
+                                <div class="context-tip-card" id="generation-photo-tip" hidden>
+                                    <div class="context-tip-copy">
+                                        <span class="badge badge-muted">Dica rápida</span>
+                                        <p class="context-tip-title">Boa foto = post melhor.</p>
+                                        <p class="context-tip-text">
+                                            Quer valorizar esse produto na imagem também? Veja um guia simples para fotografar com celular.
+                                        </p>
+                                    </div>
+                                    <button class="button button-ghost" id="open-photo-guide-button" type="button">
+                                        Veja como fotografar →
+                                    </button>
+                                </div>
 
                                 <label class="field">
                                     <span>Público-alvo</span>

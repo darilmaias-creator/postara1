@@ -187,6 +187,8 @@ const elements = {
     generatorForm: document.getElementById('generator-form'),
     generateButton: document.getElementById('generate-button'),
     generateFeedback: document.getElementById('generate-feedback'),
+    generationPhotoTip: document.getElementById('generation-photo-tip'),
+    openPhotoGuideButton: document.getElementById('open-photo-guide-button'),
     generationModeSelect: document.getElementById('generation-mode-select'),
     generationModeHint: document.getElementById('generation-mode-hint'),
     generationPlanCallout: document.getElementById('generation-plan-callout'),
@@ -1537,6 +1539,19 @@ const getLiveGeneratorRequestContext = () => {
     return createRequestContextFromFormData(new FormData(elements.generatorForm));
 };
 
+const renderGeneratorPhotoTip = () => {
+    if (!elements.generationPhotoTip) {
+        return;
+    }
+
+    const draft = getLiveGeneratorRequestContext();
+    const hasProductContext = Boolean(
+        draft.productName || draft.productFeatures || draft.targetAudience || draft.tone
+    );
+
+    elements.generationPhotoTip.hidden = !hasProductContext;
+};
+
 const getGenerateDraftPreviewMarkup = () => {
     const draft = getLiveGeneratorRequestContext();
     const hasContent = Boolean(
@@ -1644,6 +1659,7 @@ const renderResult = (result, meta = null) => {
     renderDashboard();
     syncPublishConfirmation();
     renderGenerateFeedback();
+    renderGeneratorPhotoTip();
 };
 
 const renderAuthView = () => {
@@ -2431,6 +2447,7 @@ const handleGeneratorDraftChange = () => {
     if (state.generateState.status !== 'idle') {
         setGenerateFeedback('idle', '');
     }
+    renderGenerationPhotoTip();
     renderResult(state.currentResult, state.currentHistoryMeta);
 };
 
@@ -2439,6 +2456,22 @@ const handleGenerationUpgradeClick = () => {
     elements.memberAuthView.hidden
         ? elements.authPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
         : elements.memberPlanBadge.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+const renderGenerationPhotoTip = () => {
+    if (!elements.generationPhotoTip) {
+        return;
+    }
+
+    const requestContext = getLiveGeneratorRequestContext();
+    const shouldShow = Boolean(
+        requestContext.productName ||
+            requestContext.productFeatures ||
+            requestContext.targetAudience ||
+            requestContext.tone
+    );
+
+    elements.generationPhotoTip.hidden = !shouldShow;
 };
 
 const handleResultAction = async (event) => {
@@ -2725,6 +2758,9 @@ const wireEvents = () => {
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.generatorForm.addEventListener('input', handleGeneratorDraftChange);
     elements.generatorForm.addEventListener('change', handleGeneratorDraftChange);
+    elements.openPhotoGuideButton.addEventListener('click', () => {
+        setCurrentView('photo-guide');
+    });
     elements.generationUpgradeButton.addEventListener('click', handleGenerationUpgradeClick);
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
@@ -2773,6 +2809,7 @@ const bootstrap = async () => {
     renderResult(null);
     renderHistory();
     renderInstagramHelper();
+    renderGenerationPhotoTip();
     wireEvents();
     registerAuthListener();
     await loadCurrentUser();
