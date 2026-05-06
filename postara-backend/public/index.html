@@ -208,22 +208,45 @@
                             <form class="stack" id="generator-form">
                                 <label class="field">
                                     <span>Nome do produto</span>
-                                    <input type="text" name="productName" placeholder="Ex.: Caixa de madeira personalizada" required />
+                                    <div class="field-input-with-icon">
+                                        <span class="field-input-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                                                <path d="m3.3 7 8.7 5 8.7-5"></path>
+                                                <path d="M12 22V12"></path>
+                                            </svg>
+                                        </span>
+                                        <input type="text" name="productName" placeholder="Ex.: Caixa de madeira personalizada" required />
+                                    </div>
                                 </label>
 
                                 <label class="field">
-                                    <span>Características e especificações</span>
+                                    <span class="field-label-row">
+                                        <span>Características e especificações</span>
+                                        <button
+                                            class="field-help-trigger"
+                                            id="features-help-trigger"
+                                            type="button"
+                                            aria-label="Ver dica sobre características e especificações"
+                                            aria-expanded="false"
+                                            aria-controls="features-help-popover"
+                                        >
+                                            ?
+                                        </button>
+                                    </span>
+                                    <div class="field-help-popover" id="features-help-popover" role="dialog" hidden>
+                                        <strong>Dica sobre o produto</strong>
+                                        <p>
+                                            Conte do que ele é feito, tamanho, cor, acabamento, detalhes e para que ele serve.
+                                            Quanto mais claro você for aqui, melhor a IA monta o texto do post.
+                                        </p>
+                                    </div>
                                     <textarea
                                         name="productFeatures"
                                         rows="5"
                                         placeholder="Ex.: jarra de cerâmica artesanal, 1,2L, cor verde musgo, tampa de bambu, ideal para chá e café na mesa posta"
                                     ></textarea>
                                 </label>
-
-                                <p class="hint">
-                                    Dica rápida: conte do que o produto é feito, tamanho, cor, acabamento, detalhes e para que ele serve.
-                                    Quanto mais claro você for aqui, melhor a IA monta o texto do post.
-                                </p>
 
                                 <div class="context-tip-card" id="generation-photo-tip" hidden>
                                     <div class="context-tip-copy">
@@ -260,6 +283,22 @@
                                 <p class="hint" id="generation-mode-hint">
                                     Usuários free geram em modo short. Premium libera short, medium e premium.
                                 </p>
+
+                                <div class="mode-lock-options" id="generation-mode-lock-options" hidden>
+                                    <button class="mode-lock-option" type="button" data-locked-mode="medium">
+                                        🔒 Médio
+                                    </button>
+                                    <button class="mode-lock-option" type="button" data-locked-mode="premium">
+                                        🔒 Premium
+                                    </button>
+                                </div>
+
+                                <div class="mode-lock-hint" id="generation-mode-lock-hint" hidden>
+                                    <span>Modo disponível apenas no plano Premium.</span>
+                                    <button class="mode-lock-link" id="generation-mode-upgrade-link" type="button">
+                                        Ver planos
+                                    </button>
+                                </div>
 
                                 <div class="plan-callout" id="generation-plan-callout" hidden>
                                     <div class="plan-callout-copy">

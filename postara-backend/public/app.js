@@ -192,8 +192,14 @@ const elements = {
     generateFeedback: document.getElementById('generate-feedback'),
     generationPhotoTip: document.getElementById('generation-photo-tip'),
     openPhotoGuideButton: document.getElementById('open-photo-guide-button'),
+    featuresHelpTrigger: document.getElementById('features-help-trigger'),
+    featuresHelpPopover: document.getElementById('features-help-popover'),
     generationModeSelect: document.getElementById('generation-mode-select'),
     generationModeHint: document.getElementById('generation-mode-hint'),
+    generationModeLockOptions: [...document.querySelectorAll('[data-locked-mode]')],
+    generationModeLockOptionsWrap: document.getElementById('generation-mode-lock-options'),
+    generationModeLockHint: document.getElementById('generation-mode-lock-hint'),
+    generationModeUpgradeLink: document.getElementById('generation-mode-upgrade-link'),
     generationPlanCallout: document.getElementById('generation-plan-callout'),
     generationPlanBadge: document.getElementById('generation-plan-badge'),
     generationPlanTitle: document.getElementById('generation-plan-title'),
@@ -1398,6 +1404,53 @@ const renderInstagramHelper = () => {
     elements.instagramHelpViewUnsure.classList.toggle('is-active', !isProMode);
 };
 
+const openFeaturesHelpPopover = () => {
+    if (!elements.featuresHelpPopover || !elements.featuresHelpTrigger) {
+        return;
+    }
+
+    elements.featuresHelpPopover.hidden = false;
+    elements.featuresHelpTrigger.setAttribute('aria-expanded', 'true');
+};
+
+const closeFeaturesHelpPopover = () => {
+    if (!elements.featuresHelpPopover || !elements.featuresHelpTrigger) {
+        return;
+    }
+
+    elements.featuresHelpPopover.hidden = true;
+    elements.featuresHelpTrigger.setAttribute('aria-expanded', 'false');
+};
+
+const toggleFeaturesHelpPopover = () => {
+    if (!elements.featuresHelpPopover) {
+        return;
+    }
+
+    if (elements.featuresHelpPopover.hidden) {
+        openFeaturesHelpPopover();
+        return;
+    }
+
+    closeFeaturesHelpPopover();
+};
+
+const showGenerationModeLockHint = () => {
+    if (!elements.generationModeLockHint) {
+        return;
+    }
+
+    elements.generationModeLockHint.hidden = false;
+};
+
+const hideGenerationModeLockHint = () => {
+    if (!elements.generationModeLockHint) {
+        return;
+    }
+
+    elements.generationModeLockHint.hidden = true;
+};
+
 // Mantemos a UI consistente com o plano do usuário para evitar pedir algo que o backend vai negar ou ajustar.
 const applyPlanToModeSelector = () => {
     const plan = state.user?.subscriptionPlan || 'free';
@@ -1406,6 +1459,22 @@ const applyPlanToModeSelector = () => {
 
     [...elements.generationModeSelect.options].forEach((option) => {
         option.disabled = !isPremium && option.value !== 'short';
+        option.textContent = option.value === 'short'
+            ? 'Curto'
+            : !isPremium
+                ? `🔒 ${option.value === 'medium' ? 'Médio' : 'Premium'}`
+                : option.value === 'medium'
+                    ? 'Médio'
+                    : 'Premium';
+    });
+
+    if (elements.generationModeLockOptionsWrap) {
+        elements.generationModeLockOptionsWrap.hidden = isPremium;
+    }
+
+    elements.generationModeLockOptions.forEach((button) => {
+        button.setAttribute('aria-disabled', String(isPremium));
+        button.hidden = isPremium;
     });
 
     if (!isPremium) {
@@ -1433,6 +1502,7 @@ const applyPlanToModeSelector = () => {
         elements.generationUpgradeButton.textContent = state.user ? 'Ver plano premium' : 'Entrar e ver planos';
     } else {
         elements.generationPlanCallout.hidden = true;
+        hideGenerationModeLockHint();
     }
 };
 
@@ -1503,6 +1573,13 @@ const getResultMarkup = (result, meta = null, options = {}) => {
 
     const normalizedResult = normalizeResultShape(result);
     const selectedOption = normalizedResult.options[normalizedResult.selectedOptionIndex];
+    const orderedOptions = normalizedResult.options
+        .map((option, index) => ({
+            ...option,
+            originalIndex: index,
+            isSelected: index === normalizedResult.selectedOptionIndex
+        }))
+        .sort((left, right) => Number(right.isSelected) - Number(left.isSelected) || left.originalIndex - right.originalIndex);
     const badges = [
         `Plano ${normalizedResult.subscriptionPlan}`,
         `Modo ${normalizedResult.generationMode}`,
@@ -1540,19 +1617,19 @@ const getResultMarkup = (result, meta = null, options = {}) => {
                         <div class="result-block">
                             <h4>Opções criadas pela IA</h4>
                             <div class="option-grid">
-                                ${normalizedResult.options
+                                ${orderedOptions
                                     .map(
-                                        (option, index) => `
+                                        (option) => `
                                             <article class="option-card ${
-                                                index === normalizedResult.selectedOptionIndex ? 'is-active' : ''
-                                            }">
+                                                option.isSelected ? 'is-active' : 'is-dimmed'
+                                            }" ${option.isSelected ? 'data-selected-option-card="true"' : ''}>
                                                 <div class="option-card-head">
                                                     <span class="badge ${
-                                                        index === normalizedResult.selectedOptionIndex ? '' : 'badge-muted'
-                                                    }">Opção ${index + 1}</span>
+                                                        option.isSelected ? '' : 'badge-muted'
+                                                    }">Opção ${option.originalIndex + 1}</span>
                                                     ${
-                                                        index === normalizedResult.selectedOptionIndex
-                                                            ? '<span class="option-status">Selecionada</span>'
+                                                        option.isSelected
+                                                            ? '<span class="option-selected-badge">✓ Selecionada</span>'
                                                             : ''
                                                     }
                                                 </div>
@@ -1562,17 +1639,17 @@ const getResultMarkup = (result, meta = null, options = {}) => {
                                                 }</p>
                                                 <div class="option-card-actions">
                                                     <button
-                                                        class="button ${index === normalizedResult.selectedOptionIndex ? '' : 'button-ghost'}"
+                                                        class="button ${option.isSelected ? '' : 'button-ghost'}"
                                                         type="button"
-                                                        data-option-select="${index}"
+                                                        data-option-select="${option.originalIndex}"
                                                         ${isLoadingResultAction ? 'disabled' : ''}
                                                     >
-                                                        ${index === normalizedResult.selectedOptionIndex ? 'Em uso' : 'Usar opção'}
+                                                        ${option.isSelected ? 'Em uso' : 'Usar opção'}
                                                     </button>
                                                     <button
                                                         class="button button-ghost"
                                                         type="button"
-                                                        data-option-regenerate="${index}"
+                                                        data-option-regenerate="${option.originalIndex}"
                                                         ${isLoadingResultAction ? 'disabled' : ''}
                                                     >
                                                         Refazer esta
@@ -2545,6 +2622,9 @@ const handleGeneratorDraftChange = () => {
     if (state.generateState.status !== 'idle') {
         setGenerateFeedback('idle', '');
     }
+    if (elements.generationModeSelect.value === 'short') {
+        hideGenerationModeLockHint();
+    }
     renderGenerationPhotoTip();
     renderResult(state.currentResult, state.currentHistoryMeta);
 };
@@ -2633,6 +2713,12 @@ const handleResultAction = async (event) => {
     if (selectTrigger) {
         const selectedIndex = Number(selectTrigger.dataset.optionSelect);
         renderResult(applySelectedOption(state.currentResult, selectedIndex), state.currentHistoryMeta);
+        requestAnimationFrame(() => {
+            document.querySelector('[data-result-slot="generate"] [data-selected-option-card="true"]')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
         return;
     }
 
@@ -2853,6 +2939,14 @@ const wireEvents = () => {
             closePublishConfirmation();
         }
     });
+    elements.featuresHelpTrigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleFeaturesHelpPopover();
+    });
+    elements.featuresHelpPopover.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
     elements.generatorForm.addEventListener('submit', handleGenerateSubmit);
     elements.generatorForm.addEventListener('input', handleGeneratorDraftChange);
     elements.generatorForm.addEventListener('change', handleGeneratorDraftChange);
@@ -2860,6 +2954,26 @@ const wireEvents = () => {
         setCurrentView('photo-guide');
     });
     elements.generationUpgradeButton.addEventListener('click', handleGenerationUpgradeClick);
+    elements.generationModeUpgradeLink.addEventListener('click', handleGenerationUpgradeClick);
+    elements.generationModeLockOptions.forEach((button) => {
+        button.addEventListener('click', () => {
+            showGenerationModeLockHint();
+        });
+    });
+    document.addEventListener('click', (event) => {
+        if (
+            !elements.featuresHelpPopover.hidden &&
+            !elements.featuresHelpPopover.contains(event.target) &&
+            !elements.featuresHelpTrigger.contains(event.target)
+        ) {
+            closeFeaturesHelpPopover();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeFeaturesHelpPopover();
+        }
+    });
     elements.historyLimitSelect.addEventListener('change', async () => {
         state.history.limit = Number(elements.historyLimitSelect.value);
         await loadHistoryPage(1);
