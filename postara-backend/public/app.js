@@ -664,14 +664,46 @@ const renderPublishResults = () => {
         return '';
     }
 
+    const normalizedResults = state.publishState.results.map((item) => ({
+        networkLabel: item.networkLabel === 'Instagram' ? 'Instagram' : 'Facebook',
+        status: item.status === 'error' ? 'error' : 'success'
+    }));
+    const allSuccess = normalizedResults.every((item) => item.status === 'success');
+
     return `
         <div class="publish-status-list">
-            ${state.publishState.results
+            ${
+                allSuccess
+                    ? `
+                        <article class="publish-status-summary-card">
+                            <span class="publish-status-summary-icon" aria-hidden="true">✅</span>
+                            <div class="publish-status-summary-copy">
+                                <strong>Tudo certo</strong>
+                                <p>${
+                                    normalizedResults.length > 1
+                                        ? 'Post enviado com sucesso para todas as redes!'
+                                        : 'Post enviado com sucesso!'
+                                }</p>
+                            </div>
+                        </article>
+                    `
+                    : ''
+            }
+            ${normalizedResults
                 .map(
                     (item) => `
-                        <article class="publish-status-item is-${escapeHtml(item.status)}">
-                            <strong>${escapeHtml(item.networkLabel)}</strong>
-                            <p>${escapeHtml(item.message)}</p>
+                        <article class="publish-status-network-card is-${escapeHtml(item.status)}">
+                            <span class="publish-status-network-icon" aria-hidden="true">${
+                                item.status === 'error' ? '❌' : item.networkLabel === 'Instagram' ? '📷' : '🔵'
+                            }</span>
+                            <div class="publish-status-network-copy">
+                                <strong>${escapeHtml(item.networkLabel)}</strong>
+                                <p>${
+                                    item.status === 'error'
+                                        ? 'Erro ao publicar. Verifique sua conexão e tente novamente.'
+                                        : 'Publicado com sucesso.'
+                                }</p>
+                            </div>
                         </article>
                     `
                 )
@@ -716,6 +748,14 @@ const renderGenerateFeedback = () => {
 
 const renderPublishFeedback = () => {
     if (state.publishState.status === 'idle' || !state.publishState.message) {
+        return '';
+    }
+
+    if (state.publishState.status === 'success' && state.publishState.results.length > 0) {
+        return '';
+    }
+
+    if (state.publishState.status === 'error' && state.publishState.results.length > 0) {
         return '';
     }
 
@@ -899,18 +939,26 @@ const buildPublishPanelMarkup = () => {
             </label>
 
             <div class="checkbox-row">
-                <label class="checkbox-chip">
-                    <input type="checkbox" data-publish-facebook ${state.publishDraft.facebook && canFacebook ? 'checked' : ''} ${
-        canFacebook ? '' : 'disabled'
-    } />
+                <button
+                    class="network-toggle-button ${state.publishDraft.facebook && canFacebook ? 'is-active' : ''}"
+                    type="button"
+                    data-publish-facebook-toggle
+                    aria-pressed="${state.publishDraft.facebook && canFacebook ? 'true' : 'false'}"
+                    ${canFacebook ? '' : 'disabled'}
+                >
+                    <span class="network-toggle-icon" aria-hidden="true">🔵</span>
                     <span>Facebook</span>
-                </label>
-                <label class="checkbox-chip">
-                    <input type="checkbox" data-publish-instagram ${instagramSelected ? 'checked' : ''} ${
-        canInstagram ? '' : 'disabled'
-    } />
+                </button>
+                <button
+                    class="network-toggle-button ${instagramSelected ? 'is-active' : ''}"
+                    type="button"
+                    data-publish-instagram-toggle
+                    aria-pressed="${instagramSelected ? 'true' : 'false'}"
+                    ${canInstagram ? '' : 'disabled'}
+                >
+                    <span class="network-toggle-icon" aria-hidden="true">📷</span>
                     <span>Instagram</span>
-                </label>
+                </button>
             </div>
 
             <label class="field">
@@ -938,29 +986,40 @@ const buildPublishPanelMarkup = () => {
                 state.publishDraft.mediaPreviewUrl
                     ? `
                         <div class="media-preview-card">
-                            <img
-                                class="media-preview-image"
-                                src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
-                                alt="Prévia da imagem escolhida para a postagem"
-                            />
-                                        <div class="media-preview-copy">
-                                            <strong>${escapeHtml(state.publishDraft.mediaFileName || 'Imagem pronta para publicar')}</strong>
-                                            <p>
-                                                ${escapeHtml(
-                                                    state.publishDraft.mediaUploadState === 'uploaded'
-                                                        ? 'Imagem preparada e enviada com sucesso. O Postara ajustou o formato para facilitar a publicação no Instagram.'
-                                                        : 'Imagem selecionada para a publicação.'
-                                                )}
-                                            </p>
-                                        </div>
+                            <div class="media-preview-frame">
+                                <img
+                                    class="media-preview-image"
+                                    src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}"
+                                    alt="Prévia da imagem escolhida para a postagem"
+                                />
+                            </div>
+                            <p class="media-preview-filename">
+                                ${escapeHtml(state.publishDraft.mediaFileName || 'imagem-pronta.jpg')}
+                            </p>
+                            <div class="media-preview-copy">
+                                <p>
+                                    ${escapeHtml(
+                                        state.publishDraft.mediaUploadState === 'uploaded'
+                                            ? 'Imagem preparada e enviada com sucesso. O Postara ajustou o formato para facilitar a publicação no Instagram.'
+                                            : 'Imagem selecionada para a publicação.'
+                                    )}
+                                </p>
+                            </div>
                         </div>
                     `
                     : ''
             }
 
-            <p class="hint">
-                Se você enviar uma imagem, o Facebook publica foto + legenda. Para Instagram, o Postara usa essa mesma imagem junto com o texto pronto selecionado no preview.
-            </p>
+            <div class="publish-instruction-list">
+                <div class="publish-instruction-item">
+                    <span aria-hidden="true">🔵</span>
+                    <p><strong>Facebook</strong> — publica foto + legenda juntos.</p>
+                </div>
+                <div class="publish-instruction-item">
+                    <span aria-hidden="true">📷</span>
+                    <p><strong>Instagram</strong> — publica a mesma imagem com o texto selecionado.</p>
+                </div>
+            </div>
 
             ${
                 !canInstagram
@@ -968,8 +1027,8 @@ const buildPublishPanelMarkup = () => {
                     : ''
             }
 
-            <button class="button button-primary" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
-                ${state.publishState.isLoading ? 'Postando...' : 'Revisar antes de publicar'}
+            <button class="button button-primary publish-action-button" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
+                ${state.publishState.isLoading ? 'Postando...' : 'Revisar e publicar →'}
             </button>
 
             ${renderPublishFeedback()}
@@ -2418,13 +2477,11 @@ const confirmPublishSelected = async () => {
         );
     } catch (error) {
         const publishErrorMessage = getErrorMessage(error, 'Não foi possível publicar agora.');
-        state.publishState.results = [
-            {
-                networkLabel: 'Publicação',
-                status: 'error',
-                message: publishErrorMessage
-            }
-        ];
+        state.publishState.results = targets.map((target) => ({
+            networkLabel: target === 'instagram' ? 'Instagram' : 'Facebook',
+            status: 'error',
+            message: publishErrorMessage
+        }));
         setPublishFeedback('error', publishErrorMessage);
         renderResult(state.currentResult, state.currentHistoryMeta);
         setToast(publishErrorMessage, 'error');
@@ -2688,6 +2745,8 @@ const handleResultAction = async (event) => {
     const connectionSelect = event.target.closest('[data-publish-connection-select]');
     const facebookCheckbox = event.target.closest('[data-publish-facebook]');
     const instagramCheckbox = event.target.closest('[data-publish-instagram]');
+    const facebookToggle = event.target.closest('[data-publish-facebook-toggle]');
+    const instagramToggle = event.target.closest('[data-publish-instagram-toggle]');
     const mediaFileInput = event.target.closest('[data-publish-media-file]');
     const publishTrigger = event.target.closest('[data-publish-selected]');
     const selectTrigger = event.target.closest('[data-option-select]');
@@ -2708,8 +2767,22 @@ const handleResultAction = async (event) => {
         return;
     }
 
+    if (facebookToggle) {
+        state.publishDraft.facebook = !state.publishDraft.facebook;
+        ensurePublishDraftConnection();
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        return;
+    }
+
     if (instagramCheckbox) {
         state.publishDraft.instagram = instagramCheckbox.checked;
+        ensurePublishDraftConnection();
+        renderResult(state.currentResult, state.currentHistoryMeta);
+        return;
+    }
+
+    if (instagramToggle) {
+        state.publishDraft.instagram = !state.publishDraft.instagram;
         ensurePublishDraftConnection();
         renderResult(state.currentResult, state.currentHistoryMeta);
         return;
