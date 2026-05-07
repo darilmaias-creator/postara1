@@ -196,6 +196,7 @@ const elements = {
     generateFeedback: document.getElementById('generate-feedback'),
     generationPhotoTip: document.getElementById('generation-photo-tip'),
     openPhotoGuideButton: document.getElementById('open-photo-guide-button'),
+    photoGuideContextNote: document.getElementById('photo-guide-context-note'),
     featuresHelpTrigger: document.getElementById('features-help-trigger'),
     featuresHelpPopover: document.getElementById('features-help-popover'),
     generationModeSelect: document.getElementById('generation-mode-select'),
@@ -1701,6 +1702,11 @@ const renderDashboard = () => {
         elements.dashboardResultStatus.textContent = 'Nenhum conteúdo gerado ainda.';
     } else {
         elements.dashboardResultStatus.textContent = `Último: ${state.currentResult.title}`;
+    }
+
+    if (elements.photoGuideContextNote) {
+        const shouldShowPhotoGuideNote = state.history.total > 0;
+        elements.photoGuideContextNote.hidden = !shouldShowPhotoGuideNote;
     }
 
     syncOnboardingState();

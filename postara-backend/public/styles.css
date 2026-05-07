@@ -16,6 +16,7 @@
     --danger: #ef4444;
     --shadow: 0 18px 30px rgba(0, 0, 0, 0.16);
     --radius: 16px;
+    --radius-sm: 8px;
 }
 
 * {
@@ -2095,7 +2096,7 @@ button {
 
 .guide-hero-blog {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     align-items: start;
     padding: 28px;
@@ -2120,6 +2121,14 @@ button {
     max-width: 14ch;
 }
 
+.guide-context-note {
+    margin: -2px 0 2px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+}
+
 .guide-lead {
     max-width: 62ch;
     font-size: 17px;
@@ -2138,13 +2147,16 @@ button {
 
 .guide-highlight-list {
     display: grid;
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
 }
 
 .guide-highlight-item {
     display: grid;
-    gap: 4px;
-    padding: 16px 18px;
+    align-content: start;
+    gap: 6px;
+    min-height: 90px;
+    padding: 16px 20px;
     border-radius: 18px;
     border: 1px solid rgba(124, 140, 255, 0.18);
     background:
@@ -2152,11 +2164,20 @@ button {
         rgba(255, 255, 255, 0.02);
 }
 
+.guide-highlight-icon {
+    display: inline-flex;
+    margin-bottom: 8px;
+    font-size: 24px;
+    line-height: 1;
+}
+
 .guide-highlight-item strong {
-    font-size: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .guide-highlight-item span {
+    font-size: 0.78rem;
     color: var(--muted);
     line-height: 1.6;
 }
@@ -2185,16 +2206,20 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 0;
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: radial-gradient(circle at top, rgba(124, 140, 255, 0.14), rgba(255, 255, 255, 0.02));
     min-height: 260px;
+    overflow: hidden;
 }
 
 .guide-chapter-media img {
-    width: min(100%, 300px);
-    height: auto;
+    width: 100%;
+    height: 100%;
+    min-height: 260px;
+    object-fit: cover;
+    border-radius: 10px;
     display: block;
 }
 
@@ -2277,12 +2302,17 @@ button {
     list-style: none;
     cursor: pointer;
     padding: 16px 18px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.5;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    transition: background 0.15s ease;
+}
+
+.faq-item summary:hover {
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .faq-summary-main {
@@ -2305,15 +2335,16 @@ button {
 }
 
 .faq-item summary::after {
-    content: "+";
+    content: "▾";
     flex: 0 0 auto;
     color: var(--primary-soft);
-    font-size: 22px;
+    font-size: 18px;
     line-height: 1;
+    transition: transform 0.2s ease;
 }
 
 .faq-item[open] summary::after {
-    content: "−";
+    transform: rotate(180deg);
 }
 
 .faq-item p {
@@ -2323,10 +2354,31 @@ button {
 .guide-cta-panel {
     display: grid;
     gap: 14px;
-    padding: 28px;
-    background:
-        linear-gradient(180deg, rgba(124, 140, 255, 0.08), rgba(124, 140, 255, 0.03)),
-        var(--panel);
+    padding: 16px 20px;
+    background: rgba(124, 92, 252, 0.06);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.guide-cta-panel h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.guide-cta-panel .guide-lead {
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.guide-cta-actions {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+}
+
+.guide-cta-actions .button {
+    padding: 12px 24px;
 }
 
 .toast {
@@ -2494,5 +2546,45 @@ button {
 
     .guide-chapter-media img {
         width: min(100%, 240px);
+    }
+}
+
+@media (max-width: 640px) {
+    .guide-highlight-list {
+        grid-template-columns: 1fr;
+    }
+
+    .guide-chapter,
+    .guide-chapter-reverse {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .guide-chapter-media,
+    .guide-chapter-reverse .guide-chapter-media {
+        order: 1;
+        width: 100%;
+        min-height: auto;
+        margin-bottom: 12px;
+    }
+
+    .guide-chapter-copy,
+    .guide-chapter-reverse .guide-chapter-copy {
+        order: 2;
+    }
+
+    .guide-chapter-media img {
+        width: 100%;
+        min-height: 220px;
+        border-radius: 8px;
+    }
+
+    .guide-cta-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .guide-cta-actions .button {
+        width: 100%;
     }
 }
