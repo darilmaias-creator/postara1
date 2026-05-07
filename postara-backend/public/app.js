@@ -141,6 +141,9 @@ const elements = {
     viewButtons: [...document.querySelectorAll('[data-view-target]')],
     goViewButtons: [...document.querySelectorAll('[data-go-view]')],
     accountNavSummary: document.getElementById('account-nav-summary'),
+    sidebarUserAvatar: document.getElementById('sidebar-user-avatar'),
+    sidebarUserName: document.getElementById('sidebar-user-name'),
+    sidebarUserPlan: document.getElementById('sidebar-user-plan'),
     views: [...document.querySelectorAll('[data-view]')],
     resultSlots: [...document.querySelectorAll('[data-result-slot]')],
     dashboardGreeting: document.getElementById('dashboard-greeting'),
@@ -176,6 +179,7 @@ const elements = {
     memberEmail: document.getElementById('member-email'),
     memberPlanBadge: document.getElementById('member-plan-badge'),
     memberIdBadge: document.getElementById('member-id-badge'),
+    memberAvatar: document.getElementById('member-avatar'),
     subscriptionToggleButton: document.getElementById('subscription-toggle-button'),
     refreshProfileButton: document.getElementById('refresh-profile-button'),
     logoutButton: document.getElementById('logout-button'),
@@ -269,6 +273,32 @@ const getDisplayFirstName = (name = '') => {
     }
 
     return normalizedName.split(/\s+/)[0] || normalizedName;
+};
+
+const getUserInitial = (name = '', email = '') => {
+    const firstName = getDisplayFirstName(name);
+    const fallback = String(email || '').trim().charAt(0);
+    return (firstName.charAt(0) || fallback || 'P').toUpperCase();
+};
+
+const renderSidebarIdentity = () => {
+    if (!elements.sidebarUserAvatar || !elements.sidebarUserName || !elements.sidebarUserPlan) {
+        return;
+    }
+
+    if (!state.user) {
+        elements.sidebarUserAvatar.textContent = 'P';
+        elements.sidebarUserName.textContent = 'Modo visitante';
+        elements.sidebarUserPlan.textContent = 'Entrar';
+        return;
+    }
+
+    const firstName = getDisplayFirstName(state.user.name) || 'Usuário';
+    const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
+
+    elements.sidebarUserAvatar.textContent = getUserInitial(state.user.name, state.user.email);
+    elements.sidebarUserName.textContent = state.user.name || state.user.email || 'Usuário Postara';
+    elements.sidebarUserPlan.textContent = `${firstName} · ${planLabel}`;
 };
 
 const getResultOptions = (result) => {
@@ -1537,8 +1567,9 @@ const renderDashboard = () => {
     } else {
         const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
         elements.dashboardAuthStatus.textContent = `${state.user.name || 'Usuário Postara'} conectado(a).`;
-        elements.dashboardPlanStatus.textContent =
-            `Plano atual: ${planLabel}. O app já ajusta os modos permitidos para esse perfil.`;
+        elements.dashboardPlanStatus.textContent = state.socialConnections.length
+            ? `Facebook e Instagram vinculados e prontos para publicar. Plano atual: ${planLabel}.`
+            : `Plano atual: ${planLabel}. Conecte suas redes para publicar direto pelo app.`;
     }
 
     if (!state.user) {
@@ -1546,15 +1577,13 @@ const renderDashboard = () => {
     } else if (state.history.total === 0) {
         elements.dashboardHistoryStatus.textContent = 'Nenhuma geração salva ainda para esta conta.';
     } else {
-        elements.dashboardHistoryStatus.textContent =
-            `${state.history.total} geração(ões) disponíveis para abrir de novo e reaproveitar.`;
+        elements.dashboardHistoryStatus.textContent = `${state.history.total} geração(ões) salvas.`;
     }
 
     if (!state.currentResult) {
         elements.dashboardResultStatus.textContent = 'Nenhum conteúdo gerado ainda.';
     } else {
-        elements.dashboardResultStatus.textContent =
-            `${state.currentResult.title} • ${state.currentResult.generationMode} • ${state.currentResult.source}`;
+        elements.dashboardResultStatus.textContent = `Último: ${state.currentResult.title}`;
     }
 
     syncOnboardingState();
@@ -1853,6 +1882,7 @@ const renderAuthView = () => {
         elements.googleRegisterButton.hidden = showingLogin;
         elements.googleRegisterDivider.hidden = showingLogin;
         elements.accountNavSummary.textContent = 'Entrar e gerenciar plano';
+        renderSidebarIdentity();
         applyPlanToModeSelector();
         renderSocialConnections();
         renderDashboard();
@@ -1863,13 +1893,15 @@ const renderAuthView = () => {
     elements.memberEmail.textContent = state.user.email;
     elements.memberPlanBadge.textContent = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
     elements.memberIdBadge.textContent = `ID ${state.user.id.slice(0, 8)}`;
-    elements.accountNavSummary.textContent = `${state.user.name || state.user.email} - ${
+    elements.memberAvatar.textContent = getUserInitial(state.user.name, state.user.email);
+    elements.accountNavSummary.textContent = `${getDisplayFirstName(state.user.name) || state.user.email} · ${
         state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'
     }`;
     elements.profileNameInput.value = state.user.name || '';
     elements.subscriptionToggleButton.textContent =
         state.user.subscriptionPlan === 'premium' ? 'Voltar para Free' : 'Ir para Premium';
 
+    renderSidebarIdentity();
     applyPlanToModeSelector();
     renderSocialConnections();
     renderDashboard();

@@ -1,18 +1,21 @@
 :root {
     color-scheme: dark;
-    --bg: #0f1115;
-    --panel: rgba(23, 26, 33, 0.92);
-    --panel-soft: #1f2430;
+    --bg: #0d0d10;
+    --panel: #18181f;
+    --panel-soft: #1f1f2a;
     --panel-muted: rgba(255, 255, 255, 0.03);
-    --border: #2d3340;
-    --text: #eef2ff;
-    --muted: #a8b0c7;
-    --primary: #7c8cff;
-    --primary-strong: #6678ff;
-    --success: #2bb673;
-    --danger: #ff6b6b;
-    --shadow: 0 20px 35px rgba(0, 0, 0, 0.22);
-    --radius: 20px;
+    --border: rgba(255, 255, 255, 0.07);
+    --text: #f0f0f5;
+    --muted: #9090a8;
+    --text-soft: #c7cade;
+    --text-faint: #5a5a72;
+    --primary: #7c5cfc;
+    --primary-strong: #a78bfa;
+    --primary-soft: #a78bfa;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --shadow: 0 18px 30px rgba(0, 0, 0, 0.16);
+    --radius: 16px;
 }
 
 * {
@@ -26,11 +29,20 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: Inter, Segoe UI, Arial, sans-serif;
+    font-family: 'DM Sans', Segoe UI, Arial, sans-serif;
     background:
-        radial-gradient(circle at top right, rgba(124, 140, 255, 0.15), transparent 25%),
-        linear-gradient(180deg, #0d1016 0%, #10131b 100%);
+        radial-gradient(circle at top right, rgba(124, 92, 252, 0.16), transparent 26%),
+        linear-gradient(180deg, #0d0d10 0%, #11131b 100%);
     color: var(--text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Sora', 'DM Sans', Segoe UI, Arial, sans-serif;
 }
 
 body.app-ready .app-splash {
@@ -71,13 +83,13 @@ button {
 }
 
 .app-shell {
-    width: min(1400px, calc(100% - 32px));
+    width: min(1380px, calc(100% - 24px));
     margin: 0 auto;
-    padding: 24px 0 40px;
+    padding: 20px 0 40px;
     display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
 }
 
 .sidebar,
@@ -87,34 +99,96 @@ button {
 
 .sidebar {
     position: sticky;
-    top: 20px;
-    display: grid;
-    gap: 16px;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 24px 0 18px;
+    overflow-y: auto;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
 }
 
-.brand-card,
-.panel,
-.nav-card {
+.panel {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(10px);
 }
 
-.brand-card,
-.nav-card,
 .panel {
     padding: 20px;
 }
 
-.brand-logo {
-    width: min(100%, 280px);
-    height: auto;
+.brand-card,
+.nav-card {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.brand-card {
+    padding: 0 20px 28px;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.brand-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), #c084fc);
+    box-shadow: 0 12px 24px rgba(124, 92, 252, 0.24);
+}
+
+.brand-mark-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
     display: block;
-    margin: 0 0 16px;
-    border-radius: 18px;
-    box-shadow: 0 22px 36px rgba(7, 4, 31, 0.34);
+}
+
+.brand-lockup-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.brand-lockup-copy h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.brand-lockup-copy p {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+
+.brand-description {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.brand-logo {
+    display: none;
 }
 
 .eyebrow,
@@ -123,17 +197,11 @@ button {
     text-transform: uppercase;
     letter-spacing: 0.16em;
     font-size: 12px;
-    color: var(--muted);
+    color: var(--text-faint);
 }
 
-.brand-card h1,
 .workspace-header h2 {
     margin: 0 0 12px;
-}
-
-.brand-card h1 {
-    font-size: clamp(28px, 3vw, 38px);
-    line-height: 1.05;
 }
 
 .brand-card p:last-child,
@@ -150,30 +218,50 @@ button {
 
 .nav-card {
     display: grid;
-    gap: 10px;
+    gap: 0;
+    flex: 1;
+    padding: 16px 0;
 }
 
 .nav-link {
-    display: grid;
-    gap: 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     text-align: left;
-    padding: 14px 16px;
-    border-radius: 16px;
-    border: 1px solid transparent;
+    padding: 12px 20px;
+    border-radius: 0;
+    border: 0;
+    border-left: 3px solid transparent;
     background: transparent;
-    color: var(--text);
+    color: var(--muted);
     cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .nav-link:hover {
-    transform: translateY(-1px);
-    border-color: var(--primary);
+    transform: none;
+    background: var(--panel-soft);
+    color: var(--text);
 }
 
 .nav-link.is-active {
-    background: rgba(124, 140, 255, 0.12);
-    border-color: rgba(124, 140, 255, 0.4);
+    background: rgba(124, 92, 252, 0.16);
+    border-left-color: var(--primary);
+    color: var(--primary-strong);
+}
+
+.nav-link-icon {
+    width: 20px;
+    flex: 0 0 20px;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.nav-link-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
 }
 
 .nav-link-label {
@@ -182,24 +270,71 @@ button {
 }
 
 .nav-link-copy {
+    font-size: 0.68rem;
+    color: var(--text-faint);
+}
+
+.nav-link.is-active .nav-link-copy {
+    color: rgba(167, 139, 250, 0.8);
+}
+
+.account-summary,
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-user {
+    padding: 16px 20px 0;
+    border-top: 1px solid var(--border);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--primary), #c084fc);
+    color: #fff;
     font-size: 13px;
-    color: var(--muted);
-}
-
-.account-summary {
-    display: grid;
-    gap: 12px;
-}
-
-.account-summary-name {
-    margin: 0;
-    font-size: 18px;
     font-weight: 700;
+}
+
+.user-info {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.account-summary-name,
+.user-name {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-plan {
+    display: inline-flex;
+    width: fit-content;
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(124, 92, 252, 0.18);
+    color: var(--primary-strong);
 }
 
 .workspace {
     display: grid;
     gap: 18px;
+    min-height: 100vh;
+    padding: 32px;
 }
 
 .workspace-header {
@@ -207,16 +342,21 @@ button {
     gap: 20px;
     justify-content: space-between;
     align-items: flex-start;
+    padding: 0 0 4px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .workspace-header h2 {
-    font-size: clamp(30px, 4vw, 44px);
-    line-height: 1.02;
+    font-size: 1.8rem;
+    line-height: 1.08;
 }
 
 .workspace-copy {
     max-width: 760px;
     margin: 0;
+    font-size: 0.85rem;
 }
 
 .workspace-actions {
@@ -228,12 +368,12 @@ button {
 
 .app-status-indicator {
     position: relative;
-    width: 28px;
-    height: 28px;
+    width: 18px;
+    height: 18px;
     padding: 0;
+    border: 0;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    background: transparent;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -305,13 +445,15 @@ button {
 }
 
 .view-grid-split {
-    grid-template-columns: minmax(320px, 460px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
     align-items: start;
+    gap: 24px;
 }
 
 .view-grid-account {
-    grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
+    gap: 24px;
 }
 
 .view-grid-guide {
@@ -320,7 +462,11 @@ button {
 
 .spotlight-panel {
     grid-column: span 12;
-    padding: 28px;
+    padding: 0 0 4px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
 .onboarding-panel {
@@ -332,8 +478,9 @@ button {
 }
 
 .spotlight-panel h3 {
-    margin: 0 0 12px;
-    font-size: clamp(26px, 3vw, 34px);
+    margin: 0 0 10px;
+    font-size: 1.4rem;
+    line-height: 1.18;
 }
 
 .spotlight-subtitle {
@@ -356,7 +503,7 @@ button {
 
 .summary-panel {
     grid-column: span 4;
-    min-height: 220px;
+    min-height: 160px;
     height: 100%;
     display: grid;
     align-content: start;
@@ -457,7 +604,8 @@ button {
 
 .panel-heading h3 {
     margin: 0;
-    font-size: 24px;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .stack {
@@ -903,11 +1051,32 @@ button {
 }
 
 .member-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--panel-soft);
+    border-color: var(--border);
+}
+
+.member-card-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--primary), #c084fc);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.member-card-body {
+    min-width: 0;
     display: grid;
-    gap: 6px;
-    padding: 16px;
-    background: rgba(124, 140, 255, 0.08);
-    border-color: rgba(124, 140, 255, 0.18);
+    gap: 2px;
 }
 
 .member-actions-primary {
@@ -1918,6 +2087,7 @@ button {
 
     .sidebar {
         position: static;
+        height: auto;
     }
 
     .view-grid-dashboard .summary-panel {
@@ -1997,19 +2167,27 @@ button {
         padding-top: 16px;
     }
 
-    .brand-card,
-    .nav-card,
     .panel {
         padding: 16px;
+    }
+
+    .workspace {
+        padding: 20px 0 0;
+    }
+
+    .brand-card {
+        padding: 0 16px 20px;
+    }
+
+    .nav-card {
+        padding: 12px 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
     }
 
     .app-splash-logo {
         width: min(88vw, 360px);
         border-radius: 22px;
-    }
-
-    .nav-card {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .onboarding-card-actions {
@@ -2018,6 +2196,7 @@ button {
 
     .nav-link {
         min-height: 84px;
+        align-items: flex-start;
     }
 
     .photo-guide-article {

@@ -14,6 +14,19 @@
     <link rel="shortcut icon" href="./branding/favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./branding/apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    />
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@400;600;700&display=swap"
+        rel="stylesheet"
+    />
     <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -27,37 +40,62 @@
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-card">
-                <img
-                    class="brand-logo"
-                    src="./branding/brand-cover.png"
-                    alt="Logo principal do Postara"
-                />
-                <p class="eyebrow">Postara</p>
-                <h1>Conteúdo com fluxo de produto</h1>
-                <p>
-                    Um workspace enxuto para validar autenticação, geração e histórico sem deixar tudo
-                    esmagado em uma única tela.
+                <div class="brand-lockup">
+                    <div class="brand-mark" aria-hidden="true">
+                        <img
+                            class="brand-mark-icon"
+                            src="./branding/brand-icon.png"
+                            alt=""
+                        />
+                    </div>
+                    <div class="brand-lockup-copy">
+                        <h1>Postara</h1>
+                        <p>Transforme produto em post.</p>
+                    </div>
+                </div>
+                <p class="brand-description">
+                    Um workspace enxuto para gerar, salvar e publicar conteúdo de produto.
                 </p>
             </div>
 
             <nav class="nav-card" aria-label="Navegação principal">
                 <button class="nav-link is-active" data-view-target="dashboard" type="button">
-                    <span class="nav-link-label">Visão geral</span>
-                    <span class="nav-link-copy">Resumo do workspace</span>
+                    <span class="nav-link-icon" aria-hidden="true">⊞</span>
+                    <span class="nav-link-body">
+                        <span class="nav-link-label">Visão geral</span>
+                        <span class="nav-link-copy">Resumo do workspace</span>
+                    </span>
                 </button>
                 <button class="nav-link" data-view-target="generate" type="button">
-                    <span class="nav-link-label">Gerar</span>
-                    <span class="nav-link-copy">Criar novo conteúdo</span>
+                    <span class="nav-link-icon" aria-hidden="true">✦</span>
+                    <span class="nav-link-body">
+                        <span class="nav-link-label">Gerar</span>
+                        <span class="nav-link-copy">Criar novo conteúdo</span>
+                    </span>
                 </button>
                 <button class="nav-link" data-view-target="history" type="button">
-                    <span class="nav-link-label">Histórico</span>
-                    <span class="nav-link-copy">Abrir posts salvos</span>
+                    <span class="nav-link-icon" aria-hidden="true">◷</span>
+                    <span class="nav-link-body">
+                        <span class="nav-link-label">Histórico</span>
+                        <span class="nav-link-copy">Abrir posts salvos</span>
+                    </span>
                 </button>
                 <button class="nav-link" data-view-target="account" type="button">
-                    <span class="nav-link-label">Conta</span>
-                    <span class="nav-link-copy" id="account-nav-summary">Entrar e gerenciar plano</span>
+                    <span class="nav-link-icon" aria-hidden="true">◉</span>
+                    <span class="nav-link-body">
+                        <span class="nav-link-label">Conta</span>
+                        <span class="nav-link-copy" id="account-nav-summary">Entrar e gerenciar plano</span>
+                    </span>
                 </button>
             </nav>
+
+            <div class="sidebar-user">
+                <div class="avatar" id="sidebar-user-avatar">P</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebar-user-name">Modo visitante</div>
+                    <div class="user-plan" id="sidebar-user-plan">Entrar</div>
+                </div>
+            </div>
         </aside>
 
         <div class="workspace">
@@ -613,11 +651,14 @@
 
                             <div class="stack" id="member-auth-view" hidden>
                                 <div class="member-card">
-                                    <p class="member-name" id="member-name">Usuário</p>
-                                    <p class="member-email" id="member-email">email@email.com</p>
-                                    <div class="member-meta">
-                                        <span class="badge" id="member-plan-badge">Free</span>
-                                        <span class="badge badge-muted" id="member-id-badge">ID</span>
+                                    <div class="member-card-avatar" id="member-avatar">P</div>
+                                    <div class="member-card-body">
+                                        <p class="member-name" id="member-name">Usuário</p>
+                                        <p class="member-email" id="member-email">email@email.com</p>
+                                        <div class="member-meta">
+                                            <span class="badge" id="member-plan-badge">Free</span>
+                                            <span class="badge badge-muted" id="member-id-badge">ID</span>
+                                        </div>
                                     </div>
                                 </div>
 
