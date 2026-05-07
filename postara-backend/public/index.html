@@ -54,37 +54,43 @@
                     </div>
                 </div>
                 <p class="brand-description">
-                    Um workspace enxuto para gerar, salvar e publicar conteúdo de produto.
+                    Crie, salve e publique posts de produto.
                 </p>
             </div>
 
             <nav class="nav-card" aria-label="Navegação principal">
-                <button class="nav-link is-active" data-view-target="dashboard" type="button">
-                    <span class="nav-link-icon" aria-hidden="true">⊞</span>
-                    <span class="nav-link-body">
-                        <span class="nav-link-label">Visão geral</span>
-                        <span class="nav-link-copy">Resumo do workspace</span>
+                <button class="nav-link is-active" data-view-target="generate" type="button">
+                    <span class="nav-link-icon" aria-hidden="true">
+                        <svg class="ui-icon" viewBox="0 0 24 24">
+                            <path d="M12 3v18M5 12h14M7.5 6.5l9 11M16.5 6.5l-9 11"></path>
+                        </svg>
                     </span>
-                </button>
-                <button class="nav-link" data-view-target="generate" type="button">
-                    <span class="nav-link-icon" aria-hidden="true">✦</span>
                     <span class="nav-link-body">
                         <span class="nav-link-label">Gerar</span>
-                        <span class="nav-link-copy">Criar novo conteúdo</span>
                     </span>
                 </button>
                 <button class="nav-link" data-view-target="history" type="button">
-                    <span class="nav-link-icon" aria-hidden="true">◷</span>
+                    <span class="nav-link-icon" aria-hidden="true">
+                        <svg class="ui-icon" viewBox="0 0 24 24">
+                            <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                            <path d="M3 4v5h5"></path>
+                            <path d="M12 7v5l3 2"></path>
+                        </svg>
+                    </span>
                     <span class="nav-link-body">
                         <span class="nav-link-label">Histórico</span>
-                        <span class="nav-link-copy">Abrir posts salvos</span>
                     </span>
                 </button>
                 <button class="nav-link" data-view-target="account" type="button">
-                    <span class="nav-link-icon" aria-hidden="true">◉</span>
+                    <span class="nav-link-icon" aria-hidden="true">
+                        <svg class="ui-icon" viewBox="0 0 24 24">
+                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </span>
                     <span class="nav-link-body">
                         <span class="nav-link-label">Conta</span>
-                        <span class="nav-link-copy" id="account-nav-summary">Entrar e gerenciar plano</span>
+                        <span class="nav-link-copy" id="account-nav-summary" hidden>Entrar e ver conta</span>
                     </span>
                 </button>
             </nav>
@@ -92,7 +98,7 @@
             <div class="sidebar-user">
                 <div class="avatar" id="sidebar-user-avatar">P</div>
                 <div class="user-info">
-                    <div class="user-name" id="sidebar-user-name">Modo visitante</div>
+                    <div class="user-name" id="sidebar-user-name">Visitante</div>
                     <div class="user-plan" id="sidebar-user-plan">Entrar</div>
                 </div>
             </div>
@@ -101,10 +107,10 @@
         <div class="workspace">
             <header class="workspace-header panel">
                 <div>
-                    <p class="panel-kicker">Painel</p>
-                    <h2 id="view-title">Visão geral</h2>
+                    <p class="panel-kicker">Criação</p>
+                    <h2 id="view-title">Gerar conteúdo</h2>
                     <p class="workspace-copy" id="view-description">
-                        Veja o estado da conta, o fluxo do app e os atalhos para continuar o trabalho.
+                        Descreva seu produto, gere novos posts e acompanhe a prévia em um espaço dedicado.
                     </p>
                 </div>
                 <div class="workspace-actions">
@@ -119,12 +125,12 @@
                         <span class="app-status-indicator-dot" aria-hidden="true"></span>
                     </button>
                     <button class="button button-ghost" data-go-view="account" type="button">Conta</button>
-                    <button class="button button-primary" data-go-view="generate" type="button">Novo post</button>
+                    <button class="button button-primary" data-go-view="generate" type="button">Criar post</button>
                 </div>
             </header>
 
             <main class="workspace-content">
-                <section class="view is-active" data-view="dashboard">
+                <section class="view" data-view="dashboard" hidden>
                     <div class="view-grid view-grid-dashboard">
                         <section class="panel spotlight-panel">
                             <p class="panel-kicker">Comece aqui</p>
@@ -150,7 +156,7 @@
                             <div class="panel-heading">
                                 <div>
                                     <p class="panel-kicker">Primeiros passos</p>
-                                    <h3>Faça login → conecte suas redes → gere seu primeiro post</h3>
+                                    <h3>Faça login, conecte suas redes e gere seu primeiro post</h3>
                                 </div>
                             </div>
                             <p class="onboarding-panel-copy">
@@ -163,7 +169,7 @@
                                         <span class="onboarding-step-status" id="onboarding-step-status-login">Pendente</span>
                                     </div>
                                     <h4>Faça login</h4>
-                                    <p>Entre ou crie sua conta para salvar histórico, conectar redes e liberar o fluxo completo do app.</p>
+                                    <p>Entre ou crie sua conta para salvar posts e publicar nas redes.</p>
                                 </article>
                                 <article class="onboarding-step-card" data-onboarding-step-card="social">
                                     <div class="onboarding-step-head">
@@ -201,7 +207,7 @@
                             </div>
                                 <p class="summary-title" id="dashboard-auth-status">Você ainda não está logado.</p>
                             <p class="summary-copy" id="dashboard-plan-status">
-                                Faça login para salvar histórico e desbloquear o fluxo premium.
+                                Faça login para salvar posts e acessar recursos premium.
                             </p>
                         </section>
 
@@ -233,7 +239,7 @@
                     </div>
                 </section>
 
-                <section class="view" data-view="generate" hidden>
+                <section class="view is-active" data-view="generate">
                     <div class="view-grid view-grid-split">
                         <section class="panel generator-panel" id="generator-panel">
                             <div class="panel-heading">
@@ -244,47 +250,67 @@
                             </div>
 
                             <form class="stack" id="generator-form">
-                                <label class="field">
-                                    <span>Nome do produto</span>
-                                    <div class="field-input-with-icon">
-                                        <span class="field-input-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
-                                                <path d="m3.3 7 8.7 5 8.7-5"></path>
-                                                <path d="M12 22V12"></path>
-                                            </svg>
-                                        </span>
-                                        <input type="text" name="productName" placeholder="Ex.: Caixa de madeira personalizada" required />
+                                <div class="form-section">
+                                    <div class="form-section-heading">
+                                        <span class="form-section-step">1</span>
+                                        <div>
+                                            <h4>Produto</h4>
+                                            <p>Comece pelo que será vendido.</p>
+                                        </div>
                                     </div>
-                                </label>
 
-                                <label class="field">
-                                    <span class="field-label-row">
-                                        <span>Características e especificações</span>
-                                        <button
-                                            class="field-help-trigger"
-                                            id="features-help-trigger"
-                                            type="button"
-                                            aria-label="Ver dica sobre características e especificações"
-                                            aria-expanded="false"
-                                            aria-controls="features-help-popover"
-                                        >
-                                            ?
-                                        </button>
-                                    </span>
-                                    <div class="field-help-popover" id="features-help-popover" role="dialog" hidden>
-                                        <strong>Dica sobre o produto</strong>
-                                        <p>
-                                            Conte do que ele é feito, tamanho, cor, acabamento, detalhes e para que ele serve.
-                                            Quanto mais claro você for aqui, melhor a IA monta o texto do post.
-                                        </p>
+                                    <label class="field">
+                                        <span>Nome do produto</span>
+                                        <div class="field-input-with-icon">
+                                            <span class="field-input-icon" aria-hidden="true">
+                                                <svg class="ui-icon" viewBox="0 0 24 24">
+                                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                                                    <path d="m3.3 7 8.7 5 8.7-5"></path>
+                                                    <path d="M12 22V12"></path>
+                                                </svg>
+                                            </span>
+                                            <input type="text" name="productName" placeholder="Ex.: Caixa de madeira personalizada" required />
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="form-section">
+                                    <div class="form-section-heading">
+                                        <span class="form-section-step">2</span>
+                                        <div>
+                                            <h4>Detalhes</h4>
+                                            <p>Material, tamanho, cor, uso e diferenciais melhoram o texto.</p>
+                                        </div>
                                     </div>
-                                    <textarea
-                                        name="productFeatures"
-                                        rows="5"
-                                        placeholder="Ex.: jarra de cerâmica artesanal, 1,2L, cor verde musgo, tampa de bambu, ideal para chá e café na mesa posta"
-                                    ></textarea>
-                                </label>
+
+                                    <label class="field">
+                                        <span class="field-label-row">
+                                            <span>Características e especificações</span>
+                                            <button
+                                                class="field-help-trigger"
+                                                id="features-help-trigger"
+                                                type="button"
+                                                aria-label="Ver dica sobre características e especificações"
+                                                aria-expanded="false"
+                                                aria-controls="features-help-popover"
+                                            >
+                                                ?
+                                            </button>
+                                        </span>
+                                        <div class="field-help-popover" id="features-help-popover" role="dialog" hidden>
+                                            <strong>Dica sobre o produto</strong>
+                                            <p>
+                                                Conte do que ele é feito, tamanho, cor, acabamento, detalhes e para que ele serve.
+                                                Quanto mais claro você for aqui, melhor a IA monta o texto do post.
+                                            </p>
+                                        </div>
+                                        <textarea
+                                            name="productFeatures"
+                                            rows="5"
+                                            placeholder="Ex.: jarra de cerâmica artesanal, 1,2L, cor verde musgo, tampa de bambu, ideal para chá e café na mesa posta"
+                                        ></textarea>
+                                    </label>
+                                </div>
 
                                 <div class="context-tip-card" id="generation-photo-tip" hidden>
                                     <div class="context-tip-copy">
@@ -295,47 +321,59 @@
                                         </p>
                                     </div>
                                     <button class="button button-ghost" id="open-photo-guide-button" type="button">
-                                        Veja como fotografar →
+                                        Veja como fotografar
                                     </button>
                                 </div>
 
-                                <label class="field">
-                                    <span>Público-alvo</span>
-                                    <input type="text" name="targetAudience" placeholder="Ex.: pessoas que buscam presentes delicados e personalizados" />
-                                </label>
+                                <div class="form-section">
+                                    <div class="form-section-heading">
+                                        <span class="form-section-step">3</span>
+                                        <div>
+                                            <h4>Estilo</h4>
+                                            <p>Defina para quem vender e como o post deve soar.</p>
+                                        </div>
+                                    </div>
 
-                                <label class="field">
-                                    <span>Tom</span>
-                                    <input type="text" name="tone" placeholder="Ex.: delicado, sofisticado, acolhedor" />
-                                </label>
+                                    <label class="field">
+                                        <span>Público-alvo</span>
+                                        <input type="text" name="targetAudience" placeholder="Ex.: pessoas que buscam presentes delicados e personalizados" />
+                                    </label>
 
-                                <label class="field">
-                                    <span>Modo de geração</span>
-                                    <select name="generationMode" id="generation-mode-select">
-                                        <option value="short">Curto</option>
-                                        <option value="medium">Médio</option>
-                                        <option value="premium">Premium</option>
-                                    </select>
-                                </label>
+                                    <div class="form-field-grid">
+                                        <label class="field">
+                                            <span>Tom</span>
+                                            <input type="text" name="tone" placeholder="Ex.: delicado, sofisticado, acolhedor" />
+                                        </label>
 
-                                <p class="hint" id="generation-mode-hint">
-                                    Usuários free geram em modo short. Premium libera short, medium e premium.
-                                </p>
+                                        <label class="field">
+                                            <span>Modo</span>
+                                            <select name="generationMode" id="generation-mode-select">
+                                                <option value="short">Curto</option>
+                                                <option value="medium">Médio</option>
+                                                <option value="premium">Premium</option>
+                                            </select>
+                                        </label>
+                                    </div>
 
-                                <div class="mode-lock-options" id="generation-mode-lock-options" hidden>
-                                    <button class="mode-lock-option" type="button" data-locked-mode="medium">
-                                        🔒 Médio
-                                    </button>
-                                    <button class="mode-lock-option" type="button" data-locked-mode="premium">
-                                        🔒 Premium
-                                    </button>
-                                </div>
+                                    <p class="hint" id="generation-mode-hint">
+                                    O plano gratuito cria textos curtos. O premium libera textos mais completos.
+                                    </p>
 
-                                <div class="mode-lock-hint" id="generation-mode-lock-hint" hidden>
-                                    <span>Modo disponível apenas no plano Premium.</span>
-                                    <button class="mode-lock-link" id="generation-mode-upgrade-link" type="button">
-                                        Ver planos
-                                    </button>
+                                    <div class="mode-lock-options" id="generation-mode-lock-options" hidden>
+                                        <button class="mode-lock-option" type="button" data-locked-mode="medium">
+                                            Médio
+                                        </button>
+                                        <button class="mode-lock-option" type="button" data-locked-mode="premium">
+                                            Premium
+                                        </button>
+                                    </div>
+
+                                    <div class="mode-lock-hint" id="generation-mode-lock-hint" hidden>
+                                        <span>Recurso disponível no plano Premium.</span>
+                                        <button class="mode-lock-link" id="generation-mode-upgrade-link" type="button">
+                                            Ver planos
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="plan-callout" id="generation-plan-callout" hidden>
@@ -349,7 +387,7 @@
                                         </p>
                                     </div>
                                     <button class="button" id="generation-upgrade-button" type="button">
-                                        Ver plano premium
+                                        Ver Premium
                                     </button>
                                 </div>
 
@@ -399,7 +437,7 @@
                                         </select>
                                     </label>
                                     <button class="button button-ghost" id="refresh-history-button" type="button">
-                                        Atualizar
+                                        Recarregar
                                     </button>
                                 </div>
 
@@ -433,7 +471,7 @@
                                 <p class="panel-kicker">Guia prático</p>
                                 <h3>Como tirar fotos bonitas do seu produto usando só o celular</h3>
                                 <p class="guide-context-note" id="photo-guide-context-note" hidden>
-                                    💡 Dica: boas fotos melhoram o resultado do seu próximo post.
+                                    Dica: boas fotos melhoram o resultado do seu próximo post.
                                 </p>
                                 <p class="guide-lead">
                                     Você não precisa de câmera cara para vender melhor. Com luz certa, fundo limpo e um
@@ -446,17 +484,31 @@
                             </div>
                             <div class="guide-highlight-list">
                                 <div class="guide-highlight-item">
-                                    <span class="guide-highlight-icon" aria-hidden="true">☀️</span>
+                                    <span class="guide-highlight-icon" aria-hidden="true">
+                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="4"></circle>
+                                            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+                                        </svg>
+                                    </span>
                                     <strong>Luz boa</strong>
                                     <span>faz o produto parecer mais bonito e real.</span>
                                 </div>
                                 <div class="guide-highlight-item">
-                                    <span class="guide-highlight-icon" aria-hidden="true">⬜</span>
+                                    <span class="guide-highlight-icon" aria-hidden="true">
+                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                        </svg>
+                                    </span>
                                     <strong>Fundo limpo</strong>
                                     <span>ajuda o cliente a olhar para o que importa.</span>
                                 </div>
                                 <div class="guide-highlight-item">
-                                    <span class="guide-highlight-icon" aria-hidden="true">🎯</span>
+                                    <span class="guide-highlight-icon" aria-hidden="true">
+                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="8"></circle>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </span>
                                     <strong>Ângulo certo</strong>
                                     <span>mostra valor, detalhes e acabamento.</span>
                                 </div>
@@ -557,7 +609,12 @@
                                 <details class="faq-item" open>
                                     <summary>
                                         <span class="faq-summary-main">
-                                            <span class="faq-summary-icon" aria-hidden="true">📱</span>
+                                            <span class="faq-summary-icon" aria-hidden="true">
+                                                <svg class="ui-icon" viewBox="0 0 24 24">
+                                                    <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+                                                    <path d="M11 18h2"></path>
+                                                </svg>
+                                            </span>
                                             <span>Minha câmera não é boa. Ainda vale a pena postar?</span>
                                         </span>
                                     </summary>
@@ -566,7 +623,12 @@
                                 <details class="faq-item">
                                     <summary>
                                         <span class="faq-summary-main">
-                                            <span class="faq-summary-icon" aria-hidden="true">🔍</span>
+                                            <span class="faq-summary-icon" aria-hidden="true">
+                                                <svg class="ui-icon" viewBox="0 0 24 24">
+                                                    <circle cx="11" cy="11" r="7"></circle>
+                                                    <path d="m20 20-3.5-3.5"></path>
+                                                </svg>
+                                            </span>
                                             <span>Preciso mostrar o produto inteiro e o detalhe?</span>
                                         </span>
                                     </summary>
@@ -575,7 +637,12 @@
                                 <details class="faq-item">
                                     <summary>
                                         <span class="faq-summary-main">
-                                            <span class="faq-summary-icon" aria-hidden="true">⚠️</span>
+                                            <span class="faq-summary-icon" aria-hidden="true">
+                                                <svg class="ui-icon" viewBox="0 0 24 24">
+                                                    <path d="M12 3 2.5 20h19L12 3Z"></path>
+                                                    <path d="M12 9v4M12 17h.01"></path>
+                                                </svg>
+                                            </span>
                                             <span>O que mais atrapalha?</span>
                                         </span>
                                     </summary>
@@ -612,7 +679,11 @@
                                     <div class="panel-title-row">
                                         <h3>Conta</h3>
                                         <span class="inline-status-badge" aria-label="App pronto para publicar">
-                                            <span aria-hidden="true">✓</span>
+                                            <span aria-hidden="true">
+                                                <svg class="ui-icon" viewBox="0 0 24 24">
+                                                    <path d="m5 12 4 4L19 6"></path>
+                                                </svg>
+                                            </span>
                                             <span>App pronto para publicar</span>
                                         </span>
                                     </div>
@@ -677,7 +748,7 @@
                                         <p class="member-name" id="member-name">Usuário</p>
                                         <p class="member-email" id="member-email">email@email.com</p>
                                         <div class="member-meta">
-                                            <span class="badge" id="member-plan-badge">Free</span>
+                                            <span class="badge" id="member-plan-badge">Gratuito</span>
                                             <span class="badge badge-muted" id="member-id-badge">ID</span>
                                         </div>
                                     </div>
@@ -703,11 +774,9 @@
                                         Alterar assinatura
                                     </button>
                                     <button class="button button-ghost button-full" id="refresh-profile-button" type="button">
-                                        Atualizar perfil
+                                        Recarregar conta
                                     </button>
                                 </div>
-
-                                <!-- DEV NOTE: textos técnicos internos removidos da interface final -->
 
                                 <div class="member-auth-footer">
                                     <button class="button button-subtle-link" id="logout-button" type="button">Sair</button>
@@ -719,7 +788,7 @@
                             <div class="panel-heading">
                                 <div>
                                     <p class="panel-kicker">Redes sociais</p>
-                                    <h3>Conexões e envio</h3>
+                                    <h3>Publicar nas redes</h3>
                                 </div>
                             </div>
 
@@ -732,15 +801,17 @@
                                         Conectar Instagram
                                     </button>
                                     <button class="button button-ghost" id="refresh-social-button" type="button">
-                                        Atualizar redes
+                                        Recarregar
                                     </button>
                                     <button class="button button-ghost" id="debug-meta-button" type="button">
-                                        Testar conexão
+                                        Verificar
                                     </button>
                                     <button class="button button-ghost" id="disconnect-meta-button" type="button">
                                         Desconectar Meta
                                     </button>
                                 </div>
+
+                                <div class="social-status-summary" id="social-status-summary"></div>
 
                                 <div class="empty-state" id="social-empty-state">
                                     Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.
@@ -749,9 +820,12 @@
                                 <div class="social-connections-list" id="social-connections-list"></div>
                                 <div class="social-debug-state" id="social-debug-state" hidden></div>
 
-                                <p class="hint">
-                                    Primeiro conecte o Facebook que já publica imagem + legenda. Depois conecte o Instagram com a configuração separada da Meta.
-                                </p>
+                                <details class="social-help-details">
+                                    <summary>Como conectar</summary>
+                                    <p>
+                                        Primeiro conecte o Facebook para publicar imagem e legenda. Depois conecte o Instagram se quiser reaproveitar o mesmo post no perfil profissional.
+                                    </p>
+                                </details>
 
                                 <section class="instagram-helper">
                                     <div class="instagram-helper-head">
@@ -759,10 +833,15 @@
                                     </div>
 
                                     <div class="faq-list instagram-helper-faq">
-                                        <details class="faq-item faq-item-guide" open>
+                                        <details class="faq-item faq-item-guide">
                                             <summary>
                                                 <span class="faq-summary-main">
-                                                    <span class="faq-summary-icon" aria-hidden="true">ℹ️</span>
+                                                    <span class="faq-summary-icon" aria-hidden="true">
+                                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                                            <circle cx="12" cy="12" r="9"></circle>
+                                                            <path d="M12 11v5M12 8h.01"></path>
+                                                        </svg>
+                                                    </span>
                                                     <span>Antes de conectar, confira em qual situação você está</span>
                                                 </span>
                                             </summary>
@@ -812,16 +891,27 @@
                                         <details class="faq-item">
                                             <summary>
                                                 <span class="faq-summary-main">
-                                                    <span class="faq-summary-icon" aria-hidden="true">🔗</span>
+                                                    <span class="faq-summary-icon" aria-hidden="true">
+                                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                                            <path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path>
+                                                            <path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"></path>
+                                                        </svg>
+                                                    </span>
                                                     <span>Por que o Instagram precisa da Página do Facebook?</span>
                                                 </span>
                                             </summary>
-                                            <p>A Meta usa essa ligação para liberar publicação por API. Sem ela, o app até pode reconhecer a conta, mas não consegue postar com segurança.</p>
+                                            <p>A Meta usa essa ligação para autorizar publicações. Sem ela, o Postara pode reconhecer a conta, mas não consegue postar com segurança.</p>
                                         </details>
                                         <details class="faq-item">
                                             <summary>
                                                 <span class="faq-summary-main">
-                                                    <span class="faq-summary-icon" aria-hidden="true">🖼️</span>
+                                                    <span class="faq-summary-icon" aria-hidden="true">
+                                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                                                            <path d="m8 14 2.5-3 3 4 2-2.5L19 17"></path>
+                                                            <circle cx="8" cy="9" r="1"></circle>
+                                                        </svg>
+                                                    </span>
                                                     <span>Preciso colocar URL pública da imagem?</span>
                                                 </span>
                                             </summary>
@@ -830,7 +920,11 @@
                                         <details class="faq-item">
                                             <summary>
                                                 <span class="faq-summary-main">
-                                                    <span class="faq-summary-icon" aria-hidden="true">👍</span>
+                                                    <span class="faq-summary-icon" aria-hidden="true">
+                                                        <svg class="ui-icon" viewBox="0 0 24 24">
+                                                            <path d="m5 12 4 4L19 6"></path>
+                                                        </svg>
+                                                    </span>
                                                     <span>E se eu só quiser publicar no Facebook?</span>
                                                 </span>
                                             </summary>
@@ -842,20 +936,20 @@
 
                             <div class="guide-list">
                                 <article class="guide-card">
-                                    <h4>Free</h4>
-                                    <p>Modo `short`, ideal para validação rápida e uso inicial do app.</p>
+                                    <h4>Gratuito</h4>
+                                    <p>Crie textos curtos para começar rápido.</p>
                                 </article>
                                 <article class="guide-card">
                                     <h4>Premium</h4>
-                                    <p>Libera `short`, `medium` e `premium`, com textos mais completos e flexíveis.</p>
+                                    <p>Libera textos mais completos, com mais variações e profundidade.</p>
                                 </article>
                                 <article class="guide-card">
                                     <h4>Histórico</h4>
                                     <p>Ao entrar na sua conta, cada geração fica salva para abrir de novo e reaproveitar depois.</p>
                                 </article>
                                 <article class="guide-card">
-                                    <h4>Publicação</h4>
-                                    <p>Depois de conectar a Meta, o app pode enviar o texto escolhido para Facebook, Instagram ou ambos.</p>
+                                    <h4>Publicar</h4>
+                                    <p>Depois de conectar a Meta, envie o post para Facebook, Instagram ou ambos.</p>
                                 </article>
                             </div>
                         </section>
@@ -890,7 +984,7 @@
             </div>
             <h3 id="onboarding-card-title">Faça login para começar</h3>
             <p id="onboarding-card-description">
-                Entre no app para salvar seu histórico, conectar redes e seguir com o fluxo completo.
+                Entre para salvar posts, conectar redes e publicar com mais facilidade.
             </p>
             <div class="onboarding-card-tip" id="onboarding-card-tip"></div>
             <p class="onboarding-card-note">Você pode continuar clicando no app enquanto essa dica está aberta.</p>

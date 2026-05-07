@@ -31,8 +31,8 @@ const VIEW_CONFIG = {
         description: 'Veja o estado da conta, por onde começar e os atalhos para continuar no app.'
     },
     generate: {
-        title: 'Gerar conteúdo',
-        description: 'Descreva seu produto, gere novos posts e acompanhe o resultado completo em um espaço dedicado.'
+        title: 'Criar post',
+        description: 'Descreva seu produto e veja a prévia pronta para publicar.'
     },
     history: {
         title: 'Histórico',
@@ -44,7 +44,7 @@ const VIEW_CONFIG = {
     },
     account: {
         title: 'Conta',
-        description: 'Entre, conecte suas redes e ajuste sua conta para deixar o app pronto para publicar.'
+        description: 'Entre, conecte suas redes e prepare seus posts para publicar.'
     }
 };
 
@@ -53,9 +53,9 @@ const ONBOARDING_STEPS = [
         id: 'login',
         view: 'account',
         targetKey: 'authPanel',
-        title: 'Faça login para destravar o fluxo do app',
-        description: 'Comece pela conta. Entrando no Postara, você libera histórico, plano e a base para publicar direto nas redes.',
-        tip: 'Abra a aba Conta e entre ou crie sua conta. Depois volte aqui e seguimos para a conexão das redes.'
+        title: 'Faça login para salvar seus posts',
+        description: 'Entre no Postara para salvar criações e publicar direto nas redes.',
+        tip: 'Abra Conta e entre ou crie sua conta. Depois conecte suas redes.'
     },
     {
         id: 'social',
@@ -91,7 +91,7 @@ const state = {
     socialConnections: [],
     socialDebug: null,
     currentAuthTab: 'login',
-    currentView: 'dashboard',
+    currentView: 'generate',
     currentResult: null,
     currentRequestContext: null,
     currentHistoryMeta: null,
@@ -188,6 +188,7 @@ const elements = {
     refreshSocialButton: document.getElementById('refresh-social-button'),
     debugMetaButton: document.getElementById('debug-meta-button'),
     disconnectMetaButton: document.getElementById('disconnect-meta-button'),
+    socialStatusSummary: document.getElementById('social-status-summary'),
     socialEmptyState: document.getElementById('social-empty-state'),
     socialConnectionsList: document.getElementById('social-connections-list'),
     socialDebugState: document.getElementById('social-debug-state'),
@@ -244,6 +245,20 @@ const escapeHtml = (value = '') =>
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+
+const iconMarkup = (name, className = 'ui-icon') => {
+    const icons = {
+        check: '<path d="m5 12 4 4L19 6"></path>',
+        error: '<circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6M9 9l6 6"></path>',
+        camera: '<path d="M6 8h2l1.5-2h5L16 8h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"></path><circle cx="12" cy="13" r="3"></circle>',
+        facebook: '<circle cx="12" cy="12" r="9"></circle><path d="M13 19v-6h2l.5-3H13V8.5c0-.8.3-1.5 1.6-1.5H16V4.4c-.7-.1-1.4-.2-2.1-.2-2.4 0-4 1.5-4 4V10H7.5v3H10v6"></path>',
+        refresh: '<path d="M3 12a9 9 0 0 1 15.2-6.5"></path><path d="M18 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15.2 6.5"></path><path d="M6 21v-5h5"></path>',
+        history: '<path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path><path d="M12 7v5l3 2"></path>',
+        lock: '<rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path>'
+    };
+
+    return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.check}</svg>`;
+};
 
 const formatDateTime = (isoDate) =>
     new Intl.DateTimeFormat('pt-BR', {
@@ -347,13 +362,13 @@ const renderSidebarIdentity = () => {
 
     if (!state.user) {
         elements.sidebarUserAvatar.textContent = 'P';
-        elements.sidebarUserName.textContent = 'Modo visitante';
+        elements.sidebarUserName.textContent = 'Visitante';
         elements.sidebarUserPlan.textContent = 'Entrar';
         return;
     }
 
     const firstName = getDisplayFirstName(state.user.name) || 'Usuário';
-    const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
+    const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Gratuito';
 
     elements.sidebarUserAvatar.textContent = getUserInitial(state.user.name, state.user.email);
     elements.sidebarUserName.textContent = state.user.name || state.user.email || 'Usuário Postara';
@@ -541,6 +556,35 @@ const ensurePublishDraftConnection = () => {
     return selectedConnection;
 };
 
+const getSocialStatusSummaryMarkup = ({ status, title, message, details = [] }) => `
+    <section class="social-status-card is-${status}">
+        <div class="social-status-main">
+            <span class="social-status-dot" aria-hidden="true"></span>
+            <div>
+                <h4>${escapeHtml(title)}</h4>
+                <p>${escapeHtml(message)}</p>
+            </div>
+        </div>
+        ${
+            details.length
+                ? `
+                    <div class="social-status-detail-list">
+                        ${details
+                            .map(
+                                (detail) => `
+                                    <span class="social-status-detail is-${detail.status}">
+                                        ${escapeHtml(detail.label)}
+                                    </span>
+                                `
+                            )
+                            .join('')}
+                    </div>
+                `
+                : ''
+        }
+    </section>
+`;
+
 const renderSocialConnections = () => {
     const isAuthenticated = Boolean(state.user);
     const hasConnections = state.socialConnections.length > 0;
@@ -552,9 +596,13 @@ const renderSocialConnections = () => {
     elements.disconnectMetaButton.disabled = !isAuthenticated || !hasConnections;
 
     if (!isAuthenticated) {
+        elements.socialStatusSummary.innerHTML = getSocialStatusSummaryMarkup({
+            status: 'locked',
+            title: 'Não conectado',
+            message: 'Entre na sua conta para conectar Facebook e Instagram.'
+        });
         elements.socialEmptyState.hidden = false;
-        elements.socialEmptyState.textContent =
-            'Faça login e conecte a Meta para liberar envio direto para Facebook e Instagram.';
+        elements.socialEmptyState.textContent = 'Depois do login, você poderá conectar suas redes.';
         elements.socialConnectionsList.innerHTML = '';
         renderSocialDebug();
         syncOnboardingState();
@@ -562,34 +610,66 @@ const renderSocialConnections = () => {
     }
 
     if (!hasConnections) {
+        elements.socialStatusSummary.innerHTML = getSocialStatusSummaryMarkup({
+            status: 'disconnected',
+            title: 'Não conectado',
+            message: 'Nenhuma rede Meta foi conectada ainda.'
+        });
         elements.socialEmptyState.hidden = false;
-        elements.socialEmptyState.textContent =
-            'Nenhuma rede Meta conectada ainda. Use o botão acima para importar páginas do Facebook e contas profissionais do Instagram.';
+        elements.socialEmptyState.textContent = 'Conecte o Facebook primeiro. Depois adicione o Instagram, se quiser publicar no perfil.';
         elements.socialConnectionsList.innerHTML = '';
         renderSocialDebug();
         syncOnboardingState();
         return;
     }
 
+    const supportsFacebook = state.socialConnections.some((connection) => connection.supportsFacebook);
+    const supportsInstagram = state.socialConnections.some((connection) => connection.supportsInstagram);
+    const readyToPublish = supportsFacebook && supportsInstagram;
+
+    elements.socialStatusSummary.innerHTML = getSocialStatusSummaryMarkup({
+        status: readyToPublish ? 'ready' : 'connected',
+        title: readyToPublish ? 'Pronto para publicar' : 'Conectado',
+        message: readyToPublish
+            ? 'Facebook e Instagram estão prontos.'
+            : 'Facebook conectado. Instagram ainda precisa ser conectado.',
+        details: [
+            {
+                label: supportsFacebook ? 'Facebook conectado' : 'Facebook pendente',
+                status: supportsFacebook ? 'success' : 'warning'
+            },
+            {
+                label: supportsInstagram ? 'Instagram conectado' : 'Instagram pendente',
+                status: supportsInstagram ? 'success' : 'warning'
+            }
+        ]
+    });
     elements.socialEmptyState.hidden = true;
     elements.socialConnectionsList.innerHTML = state.socialConnections
         .map(
             (connection) => `
                 <article class="social-connection-card">
-                    <div class="result-meta">
-                        <span class="badge">Meta</span>
-                        ${connection.supportsFacebook ? '<span class="badge badge-muted">Facebook ativo</span>' : ''}
-                        ${connection.supportsInstagram ? '<span class="badge badge-muted">Instagram ativo</span>' : ''}
+                    <div class="social-connection-head">
+                        <div>
+                            <span class="badge">Meta</span>
+                            <h4 class="social-connection-title">${escapeHtml(connection.facebookPageName || 'Página Meta')}</h4>
+                        </div>
+                        <span class="social-connection-state ${connection.supportsInstagram ? 'is-ready' : 'is-connected'}">
+                            ${connection.supportsInstagram ? 'Pronto' : 'Conectado'}
+                        </span>
                     </div>
-                    <h4 class="social-connection-title">${escapeHtml(connection.facebookPageName)}</h4>
-                    <p class="social-connection-copy">
-                        Página do Facebook pronta para receber posts.
-                        ${
-                            connection.instagramUsername
-                                ? ` Instagram vinculado: @${escapeHtml(connection.instagramUsername)}.`
-                                : ' Nenhum Instagram profissional vinculado nessa página.'
-                        }
-                    </p>
+                    <div class="social-status-detail-list">
+                        <span class="social-status-detail ${connection.supportsFacebook ? 'is-success' : 'is-warning'}">
+                            ${connection.supportsFacebook ? 'Facebook ativo' : 'Facebook pendente'}
+                        </span>
+                        <span class="social-status-detail ${connection.supportsInstagram ? 'is-success' : 'is-warning'}">
+                            ${
+                                connection.instagramUsername
+                                    ? `Instagram @${escapeHtml(connection.instagramUsername)}`
+                                    : 'Instagram pendente'
+                            }
+                        </span>
+                    </div>
                 </article>
             `
         )
@@ -604,8 +684,6 @@ const renderSocialDebug = () => {
         elements.socialDebugState.innerHTML = '';
         return;
     }
-
-    console.log('Meta debug raw', state.socialDebug);
 
     const snapshots = Array.isArray(state.socialDebug.providerSnapshots) && state.socialDebug.providerSnapshots.length
         ? state.socialDebug.providerSnapshots
@@ -664,11 +742,33 @@ const renderSocialDebug = () => {
     const instagramOk = Boolean(instagramConnection?.instagramBusinessId || instagramUsername);
     const everythingOk = facebookOk && instagramOk && permissionsOk;
 
+    elements.socialStatusSummary.innerHTML = getSocialStatusSummaryMarkup({
+        status: everythingOk ? 'ready' : 'error',
+        title: everythingOk ? 'Pronto para publicar' : 'Erro na conexão',
+        message: everythingOk
+            ? 'Facebook, Instagram e permissões estão prontos.'
+            : 'Revise os itens abaixo e conecte a Meta novamente se necessário.',
+        details: [
+            {
+                label: facebookOk ? 'Facebook OK' : 'Facebook com problema',
+                status: facebookOk ? 'success' : 'error'
+            },
+            {
+                label: instagramOk ? 'Instagram OK' : 'Instagram com problema',
+                status: instagramOk ? 'success' : 'error'
+            },
+            {
+                label: permissionsOk ? 'Permissões OK' : 'Permissões pendentes',
+                status: permissionsOk ? 'success' : 'error'
+            }
+        ]
+    });
+
     const cards = [
         {
             title: 'Facebook',
             status: facebookOk ? 'success' : 'error',
-            icon: facebookOk ? '✅' : '❌',
+            icon: facebookOk ? iconMarkup('check') : iconMarkup('error'),
             message: facebookOk
                 ? `Página ${facebookPageName} pronta para publicar.`
                 : 'Página do Facebook não encontrada. Conecte novamente a Meta e selecione a página correta.'
@@ -676,7 +776,7 @@ const renderSocialDebug = () => {
         {
             title: 'Instagram',
             status: instagramOk ? 'success' : 'error',
-            icon: instagramOk ? '✅' : '❌',
+            icon: instagramOk ? iconMarkup('check') : iconMarkup('error'),
             message: instagramOk
                 ? `Perfil @${instagramUsername} vinculado com sucesso.`
                 : 'Instagram não encontrado. Verifique se a conta é profissional.'
@@ -684,7 +784,7 @@ const renderSocialDebug = () => {
         {
             title: 'Permissões',
             status: permissionsOk ? 'success' : 'error',
-            icon: permissionsOk ? '✅' : '❌',
+            icon: permissionsOk ? iconMarkup('check') : iconMarkup('error'),
             message: permissionsOk
                 ? 'Permissões concedidas.'
                 : `Permissão ausente: ${missingPermission.label}.`
@@ -735,7 +835,7 @@ const renderPublishResults = () => {
                 allSuccess
                     ? `
                         <article class="publish-status-summary-card">
-                            <span class="publish-status-summary-icon" aria-hidden="true">✅</span>
+                            <span class="publish-status-summary-icon" aria-hidden="true">${iconMarkup('check')}</span>
                             <div class="publish-status-summary-copy">
                                 <strong>Tudo certo</strong>
                                 <p>${
@@ -753,7 +853,7 @@ const renderPublishResults = () => {
                     (item) => `
                         <article class="publish-status-network-card is-${escapeHtml(item.status)}">
                             <span class="publish-status-network-icon" aria-hidden="true">${
-                                item.status === 'error' ? '❌' : item.networkLabel === 'Instagram' ? '📷' : '🔵'
+                                item.status === 'error' ? iconMarkup('error') : item.networkLabel === 'Instagram' ? iconMarkup('camera') : iconMarkup('facebook')
                             }</span>
                             <div class="publish-status-network-copy">
                                 <strong>${escapeHtml(item.networkLabel)}</strong>
@@ -789,16 +889,16 @@ const renderGenerateFeedback = () => {
     };
 
     const icons = {
-        loading: '⏳',
-        success: '✅',
-        error: '❌'
+        loading: iconMarkup('refresh'),
+        success: iconMarkup('check'),
+        error: iconMarkup('error')
     };
 
     elements.generateFeedback.hidden = false;
     elements.generateFeedback.className = `action-feedback is-${state.generateState.status}`;
     elements.generateFeedback.innerHTML = `
         <div class="action-feedback-head">
-            <span class="action-feedback-icon">${icons[state.generateState.status] || '•'}</span>
+            <span class="action-feedback-icon">${icons[state.generateState.status] || ''}</span>
             <strong>${labels[state.generateState.status] || 'Aviso'}</strong>
         </div>
         <p>${escapeHtml(state.generateState.message)}</p>
@@ -825,15 +925,15 @@ const renderPublishFeedback = () => {
     };
 
     const icons = {
-        loading: '⏳',
-        success: '✅',
-        error: '❌'
+        loading: iconMarkup('refresh'),
+        success: iconMarkup('check'),
+        error: iconMarkup('error')
     };
 
     return `
         <div class="action-feedback is-${escapeHtml(state.publishState.status)}">
             <div class="action-feedback-head">
-                <span class="action-feedback-icon">${escapeHtml(icons[state.publishState.status] || '•')}</span>
+                <span class="action-feedback-icon">${icons[state.publishState.status] || ''}</span>
                 <strong>${escapeHtml(labels[state.publishState.status] || 'Aviso')}</strong>
             </div>
             <p>${escapeHtml(state.publishState.message)}</p>
@@ -1005,7 +1105,7 @@ const buildPublishPanelMarkup = () => {
                     aria-pressed="${state.publishDraft.facebook && canFacebook ? 'true' : 'false'}"
                     ${canFacebook ? '' : 'disabled'}
                 >
-                    <span class="network-toggle-icon" aria-hidden="true">🔵</span>
+                    <span class="network-toggle-icon" aria-hidden="true">${iconMarkup('facebook')}</span>
                     <span>Facebook</span>
                 </button>
                 <button
@@ -1015,7 +1115,7 @@ const buildPublishPanelMarkup = () => {
                     aria-pressed="${instagramSelected ? 'true' : 'false'}"
                     ${canInstagram ? '' : 'disabled'}
                 >
-                    <span class="network-toggle-icon" aria-hidden="true">📷</span>
+                    <span class="network-toggle-icon" aria-hidden="true">${iconMarkup('camera')}</span>
                     <span>Instagram</span>
                 </button>
             </div>
@@ -1071,11 +1171,11 @@ const buildPublishPanelMarkup = () => {
 
             <div class="publish-instruction-list">
                 <div class="publish-instruction-item">
-                    <span aria-hidden="true">🔵</span>
+                    <span aria-hidden="true">${iconMarkup('facebook')}</span>
                     <p><strong>Facebook</strong> — publica foto + legenda juntos.</p>
                 </div>
                 <div class="publish-instruction-item">
-                    <span aria-hidden="true">📷</span>
+                    <span aria-hidden="true">${iconMarkup('camera')}</span>
                     <p><strong>Instagram</strong> — publica a mesma imagem com o texto selecionado.</p>
                 </div>
             </div>
@@ -1087,7 +1187,7 @@ const buildPublishPanelMarkup = () => {
             }
 
             <button class="button button-primary publish-action-button" type="button" data-publish-selected ${publishDisabled ? 'disabled' : ''}>
-                ${state.publishState.isLoading ? 'Postando...' : 'Revisar e publicar →'}
+                ${state.publishState.isLoading ? 'Postando...' : 'Revisar e publicar'}
             </button>
 
             ${renderPublishFeedback()}
@@ -1296,8 +1396,8 @@ const renderDeploymentNotice = () => {
 
     if (!hasSupabaseConfig) {
         elements.deploymentNotice.dataset.status = 'warning';
-        elements.deploymentNotice.setAttribute('aria-label', 'Conexão parcial do app.');
-        elements.deploymentNotice.dataset.tooltip = 'Conexão parcial do app.';
+        elements.deploymentNotice.setAttribute('aria-label', 'Configuração pendente.');
+        elements.deploymentNotice.dataset.tooltip = 'Configuração pendente.';
         return;
     }
 
@@ -1610,7 +1710,7 @@ const applyPlanToModeSelector = () => {
         option.textContent = option.value === 'short'
             ? 'Curto'
             : !isPremium
-                ? `🔒 ${option.value === 'medium' ? 'Médio' : 'Premium'}`
+                ? `${option.value === 'medium' ? 'Médio' : 'Premium'}`
                 : option.value === 'medium'
                     ? 'Médio'
                     : 'Premium';
@@ -1632,22 +1732,22 @@ const applyPlanToModeSelector = () => {
     } else if (!['short', 'medium', 'premium'].includes(selectedValue)) {
         elements.generationModeSelect.value = 'premium';
         elements.generationModeHint.textContent =
-            'No premium, você escolhe entre curto, médio e premium conforme a profundidade que quiser no texto.';
+            'No Premium, você escolhe o tamanho do texto conforme a campanha.';
     } else {
         elements.generationModeHint.textContent =
-            'No premium, você escolhe entre curto, médio e premium conforme a profundidade que quiser no texto.';
+            'No Premium, você escolhe o tamanho do texto conforme a campanha.';
     }
 
     if (!isPremium) {
         elements.generationPlanCallout.hidden = false;
-        elements.generationPlanBadge.textContent = state.user ? 'Plano gratuito' : 'Modo gratuito';
+        elements.generationPlanBadge.textContent = state.user ? 'Plano gratuito' : 'Uso gratuito';
         elements.generationPlanTitle.textContent = state.user
             ? 'Você está no plano gratuito — gera textos curtos.'
-            : 'Você está no modo gratuito — gera textos curtos.';
+            : 'Você está usando a versão gratuita.';
         elements.generationPlanText.textContent = state.user
             ? 'Quer textos mais completos? Assine por R$19,90/mês.'
-            : 'Quer textos mais completos e salvar seu histórico? Entre na conta e assine por R$19,90/mês.';
-        elements.generationUpgradeButton.textContent = state.user ? 'Ver plano premium' : 'Entrar e ver planos';
+            : 'Entre na conta para salvar posts e ver o Premium.';
+        elements.generationUpgradeButton.textContent = state.user ? 'Ver Premium' : 'Entrar e ver planos';
     } else {
         elements.generationPlanCallout.hidden = true;
         hideGenerationModeLockHint();
@@ -1672,22 +1772,22 @@ const renderDashboard = () => {
         elements.dashboardProgressNote.textContent = '';
     } else if (state.history.total > 0) {
         elements.dashboardProgressNote.hidden = false;
-        elements.dashboardProgressNote.textContent = `🎉 Você já gerou ${state.history.total} post(s) pelo Postara!`;
+        elements.dashboardProgressNote.textContent = `Você já gerou ${state.history.total} post(s) pelo Postara.`;
     } else {
         elements.dashboardProgressNote.hidden = false;
-        elements.dashboardProgressNote.textContent = '👋 Gere seu primeiro post agora e veja o resultado aqui.';
+        elements.dashboardProgressNote.textContent = 'Gere seu primeiro post agora e veja o resultado aqui.';
     }
 
     if (!state.user) {
         elements.dashboardAuthStatus.textContent = 'Você ainda não está logado.';
         elements.dashboardPlanStatus.textContent =
-            'Faça login para salvar histórico e desbloquear o fluxo premium.';
+            'Faça login para salvar posts e acessar recursos premium.';
     } else {
-        const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
+        const planLabel = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Gratuito';
         elements.dashboardAuthStatus.textContent = `${state.user.name || 'Usuário Postara'} conectado(a).`;
         elements.dashboardPlanStatus.textContent = state.socialConnections.length
             ? `Facebook e Instagram vinculados e prontos para publicar. Plano atual: ${planLabel}.`
-            : `Plano atual: ${planLabel}. Conecte suas redes para publicar direto pelo app.`;
+            : `Plano atual: ${planLabel}. Conecte suas redes para publicar direto.`;
     }
 
     if (!state.user) {
@@ -1732,23 +1832,27 @@ const getResultMarkup = (result, meta = null, options = {}) => {
             isSelected: index === normalizedResult.selectedOptionIndex
         }))
         .sort((left, right) => Number(right.isSelected) - Number(left.isSelected) || left.originalIndex - right.originalIndex);
-    const badges = [
-        `Plano ${normalizedResult.subscriptionPlan}`,
-        `Modo ${normalizedResult.generationMode}`,
-        `${normalizedResult.source} • ${normalizedResult.model}`,
-        normalizedResult.fallbackUsed ? 'Fallback ativo' : 'Primário ativo'
-    ];
+    const badges = [`Plano ${normalizedResult.subscriptionPlan === 'premium' ? 'Premium' : 'Gratuito'}`];
 
     if (normalizedResult.modeAdjusted) {
-        badges.push('Modo ajustado pela regra do plano');
+        badges.push('Ajustado ao plano');
     }
 
     if (meta?.historyId) {
-        badges.push(`Histórico ${meta.historyId.slice(0, 8)}`);
+        badges.push('Salvo');
     }
 
     const isLoadingResultAction = state.resultActionState.isLoading;
     const hasMultipleOptions = normalizedResult.options.length > 1;
+    const postReadyText = selectedOption.description || buildPostReadyText(selectedOption);
+    const hashtags = Array.isArray(selectedOption.hashtags) ? selectedOption.hashtags : [];
+    const mediaPreviewMarkup = state.publishDraft.mediaPreviewUrl
+        ? `<img class="post-preview-image" src="${escapeHtml(state.publishDraft.mediaPreviewUrl)}" alt="Imagem selecionada para o post" />`
+        : `
+            <div class="post-preview-image-placeholder">
+                <span>Imagem do produto</span>
+            </div>
+        `;
 
     return `
         <article class="result-view">
@@ -1781,7 +1885,7 @@ const getResultMarkup = (result, meta = null, options = {}) => {
                                                     }">Opção ${option.originalIndex + 1}</span>
                                                     ${
                                                         option.isSelected
-                                                            ? '<span class="option-selected-badge">✓ Selecionada</span>'
+                                                            ? `<span class="option-selected-badge">${iconMarkup('check')} Selecionada</span>`
                                                             : ''
                                                     }
                                                 </div>
@@ -1826,26 +1930,42 @@ const getResultMarkup = (result, meta = null, options = {}) => {
                     `
                     : ''
             }
-            <h3>${escapeHtml(selectedOption.title)}</h3>
-            <div class="result-block">
-                <h4>Legenda</h4>
-                <p>${escapeHtml(selectedOption.caption)}</p>
-            </div>
-            <div class="result-block">
-                <h4>CTA</h4>
-                <p>${escapeHtml(selectedOption.cta)}</p>
-            </div>
-            <div class="result-block">
-                <h4>Hashtags</h4>
-                <div class="tag-list">
-                    ${selectedOption.hashtags
-                        .map((hashtag) => `<span class="tag">${escapeHtml(hashtag)}</span>`)
-                        .join('')}
+            <section class="post-preview">
+                <div class="post-preview-top">
+                    <div class="post-preview-profile">
+                        <span class="post-preview-avatar">P</span>
+                        <div>
+                            <strong>Postara</strong>
+                            <span>prévia do post</span>
+                        </div>
+                    </div>
+                    <span class="post-preview-network">Feed</span>
                 </div>
-            </div>
+                <div class="post-preview-media">
+                    ${mediaPreviewMarkup}
+                </div>
+                <div class="post-preview-body">
+                    <h3>${escapeHtml(selectedOption.title)}</h3>
+                    <p class="post-preview-caption">${escapeHtml(selectedOption.caption)}</p>
+                    ${
+                        selectedOption.cta
+                            ? `<p class="post-preview-cta">${escapeHtml(selectedOption.cta)}</p>`
+                            : ''
+                    }
+                    ${
+                        hashtags.length
+                            ? `
+                                <div class="post-preview-hashtags">
+                                    ${hashtags.map((hashtag) => `<span>${escapeHtml(hashtag)}</span>`).join('')}
+                                </div>
+                            `
+                            : ''
+                    }
+                </div>
+            </section>
             <div class="result-block">
                 <h4>Texto pronto para postar</h4>
-                <pre>${escapeHtml(selectedOption.description || buildPostReadyText(selectedOption))}</pre>
+                <pre>${escapeHtml(postReadyText)}</pre>
             </div>
             ${buildPublishPanelMarkup()}
         </article>
@@ -1955,11 +2075,7 @@ const getGeneratePreviewMarkup = (result, meta = null) => {
         : '';
 
     if (!draftMarkup && !resultMarkup) {
-        return `
-            <div class="empty-state">
-                Escreva sobre o seu produto e a prévia mostra aqui só o que você informou. Quando você clicar em gerar, o texto criado pela IA aparece abaixo.
-            </div>
-        `;
+        return getGenerateEmptyPreviewMarkup();
     }
 
     return `
@@ -1970,11 +2086,45 @@ const getGeneratePreviewMarkup = (result, meta = null) => {
     `;
 };
 
+const getGenerateEmptyPreviewMarkup = () => `
+    <div class="generate-empty-preview">
+        <div class="social-preview-card" aria-hidden="true">
+            <div class="social-preview-top">
+                <span class="social-preview-avatar">P</span>
+                <div>
+                    <strong>Sua marca</strong>
+                    <span>post pronto para publicar</span>
+                </div>
+            </div>
+            <div class="social-preview-media">
+                <span>Imagem do produto</span>
+            </div>
+            <div class="social-preview-copy">
+                <span class="social-preview-line is-strong"></span>
+                <span class="social-preview-line"></span>
+                <span class="social-preview-line is-short"></span>
+            </div>
+            <div class="social-preview-tags">
+                <span>#produto</span>
+                <span>#presente</span>
+                <span>#feitoamao</span>
+            </div>
+        </div>
+        <div class="generate-empty-copy">
+            <span class="badge badge-muted">Próximo passo</span>
+            <h4>Preencha o produto para montar a prévia</h4>
+            <p>
+                Enquanto você digita, este painel mostra o resumo do pedido. Depois de gerar, ele vira uma prévia completa com título, legenda, CTA e hashtags.
+            </p>
+        </div>
+    </div>
+`;
+
 const getHistoryPreviewMarkup = (result, meta = null) => {
     if (!result || !meta?.historyId) {
         return `
             <div class="history-preview-empty-state">
-                <span class="history-preview-empty-icon" aria-hidden="true">◷</span>
+                <span class="history-preview-empty-icon" aria-hidden="true">${iconMarkup('history')}</span>
                 <h4>Selecione um item</h4>
                 <p>
                     Clique em qualquer geração da lista para ver o conteúdo completo e publicar novamente.
@@ -2023,7 +2173,7 @@ const renderAuthView = () => {
         elements.googleLoginButton.hidden = !showingLogin;
         elements.googleRegisterButton.hidden = showingLogin;
         elements.googleRegisterDivider.hidden = showingLogin;
-        elements.accountNavSummary.textContent = 'Entrar e gerenciar plano';
+        elements.accountNavSummary.textContent = 'Entrar e ver conta';
         renderSidebarIdentity();
         applyPlanToModeSelector();
         renderSocialConnections();
@@ -2033,15 +2183,15 @@ const renderAuthView = () => {
 
     elements.memberName.textContent = state.user.name || 'Usuário Postara';
     elements.memberEmail.textContent = state.user.email;
-    elements.memberPlanBadge.textContent = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free';
-    elements.memberIdBadge.textContent = `ID ${state.user.id.slice(0, 8)}`;
+    elements.memberPlanBadge.textContent = state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Gratuito';
+    elements.memberIdBadge.textContent = 'Conta ativa';
     elements.memberAvatar.textContent = getUserInitial(state.user.name, state.user.email);
     elements.accountNavSummary.textContent = `${getDisplayFirstName(state.user.name) || state.user.email} · ${
-        state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Free'
+        state.user.subscriptionPlan === 'premium' ? 'Premium' : 'Gratuito'
     }`;
     elements.profileNameInput.value = state.user.name || '';
     elements.subscriptionToggleButton.textContent =
-        state.user.subscriptionPlan === 'premium' ? 'Voltar para Free' : 'Ir para Premium';
+        state.user.subscriptionPlan === 'premium' ? 'Usar plano gratuito' : 'Ir para Premium';
 
     renderSidebarIdentity();
     applyPlanToModeSelector();
@@ -2097,7 +2247,7 @@ const renderHistory = () => {
                                 ${publishBadges}
                             </div>
                             <button class="button button-ghost history-open-button" type="button" data-history-open="${escapeHtml(entry.id)}">
-                                ↗ Abrir de novo
+                                Abrir
                             </button>
                         </div>
                     </article>
@@ -2403,17 +2553,17 @@ const handleRefreshSocialConnections = async () => {
 
 const handleMetaDebug = async () => {
     try {
-        setLoading(elements.debugMetaButton, true, 'Lendo...');
+        setLoading(elements.debugMetaButton, true, 'Verificando...');
         const payload = await apiRequest('/api/social/meta/debug', {
             method: 'GET'
         });
         state.socialDebug = payload?.data || null;
         renderSocialConnections();
-        setToast('Teste de conexão atualizado.');
+        setToast('Status das redes atualizado.');
     } catch (error) {
         state.socialDebug = null;
         renderSocialConnections();
-        setToast(getErrorMessage(error, 'Não foi possível gerar o diagnóstico da Meta.'), 'error');
+        setToast(getErrorMessage(error, 'Não foi possível verificar suas redes.'), 'error');
     } finally {
         setLoading(elements.debugMetaButton, false);
     }
@@ -2463,7 +2613,7 @@ const handleLogout = async () => {
         state.publishDraft = createInitialPublishDraft();
         resetHistoryState();
         renderResult(null);
-        setCurrentView('dashboard');
+        setCurrentView('generate');
         setToast('Sessão encerrada.');
     } catch (error) {
         setToast(getErrorMessage(error, 'Não foi possível sair agora.'), 'error');
@@ -2801,8 +2951,8 @@ const handleGenerateSubmit = async (event) => {
         );
         setToast(
             result.options.length > 1
-                ? `3 opções criadas via ${result.source}.`
-                : `Conteúdo gerado via ${result.source}.`
+                ? '3 opções criadas com sucesso.'
+                : 'Post criado com sucesso.'
         );
     } catch (error) {
         setGenerateFeedback('error', getErrorMessage(error, 'Não foi possível gerar o conteúdo agora.'));
@@ -3259,10 +3409,4 @@ bootstrap().catch((error) => {
     setToast('Falha ao inicializar o frontend.', 'error');
 }).finally(() => {
     hideAppSplash();
-    window.setTimeout(() => {
-        if (state.onboarding.status === ONBOARDING_STATUS.pending && !state.onboarding.hasAutoStarted) {
-            state.onboarding.hasAutoStarted = true;
-            startOnboarding();
-        }
-    }, 520);
 });
