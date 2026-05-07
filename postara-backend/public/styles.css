@@ -64,8 +64,8 @@ body.app-ready .app-splash {
     place-items: center;
     padding: 24px;
     background:
-        radial-gradient(circle at top right, rgba(33, 197, 139, 0.11), transparent 25%),
-        linear-gradient(180deg, #101114 0%, #151820 100%);
+        radial-gradient(circle at top right, rgba(33, 197, 139, 0.08), transparent 28%),
+        linear-gradient(180deg, #09031f 0%, #0c0824 100%);
     transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
@@ -73,7 +73,7 @@ body.app-ready .app-splash {
     width: min(92vw, 520px);
     height: auto;
     border-radius: 28px;
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
+    box-shadow: 0 34px 78px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 button,
