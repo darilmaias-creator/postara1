@@ -250,6 +250,64 @@ const formatDateTime = (isoDate) =>
         timeStyle: 'short'
     }).format(new Date(isoDate));
 
+const formatHistoryRelativeDate = (isoDate) => {
+    const date = new Date(isoDate);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayDiff = Math.round((startOfToday - startOfTarget) / 86400000);
+    const timeLabel = new Intl.DateTimeFormat('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+    })
+        .format(date)
+        .replace(':', 'h');
+
+    if (dayDiff === 0) {
+        return `hoje, ${timeLabel}`;
+    }
+
+    if (dayDiff === 1) {
+        return `ontem, ${timeLabel}`;
+    }
+
+    if (dayDiff > 1 && dayDiff < 7) {
+        return `${dayDiff} dias atrás`;
+    }
+
+    return formatDateTime(isoDate);
+};
+
+const getHistoryPublishedNetworks = (entry) => {
+    const response = entry?.response || {};
+    const rawNetworks = [
+        ...(Array.isArray(response.publishedNetworks) ? response.publishedNetworks : []),
+        ...(Array.isArray(response.networksPublished) ? response.networksPublished : []),
+        ...(Array.isArray(response.publishTargets) ? response.publishTargets : []),
+        ...(Array.isArray(response.publications) ? response.publications.map((item) => item?.network) : [])
+    ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase())
+        .filter((value) => value === 'facebook' || value === 'instagram');
+
+    return [...new Set(rawNetworks)];
+};
+
+const getHistoryProductName = (entry) => {
+    const requestName = String(entry?.request?.productName || '').trim();
+
+    if (requestName) {
+        return requestName;
+    }
+
+    return normalizeResultShape(entry?.response)?.title || 'Conteúdo gerado';
+};
+
 const buildPostReadyText = (option) =>
     [String(option?.caption || '').trim(), String(option?.cta || '').trim(), (option?.hashtags || []).join(' ').trim()]
         .filter(Boolean)
@@ -1906,6 +1964,22 @@ const getGeneratePreviewMarkup = (result, meta = null) => {
     `;
 };
 
+const getHistoryPreviewMarkup = (result, meta = null) => {
+    if (!result || !meta?.historyId) {
+        return `
+            <div class="history-preview-empty-state">
+                <span class="history-preview-empty-icon" aria-hidden="true">◷</span>
+                <h4>Selecione um item</h4>
+                <p>
+                    Clique em qualquer geração da lista para ver o conteúdo completo e publicar novamente.
+                </p>
+            </div>
+        `;
+    }
+
+    return getResultMarkup(result, meta);
+};
+
 // Renderizamos a mesma resposta em slots diferentes para reaproveitar o preview nas áreas de geração e histórico.
 const renderResult = (result, meta = null) => {
     state.currentResult = normalizeResultShape(result);
@@ -1916,10 +1990,13 @@ const renderResult = (result, meta = null) => {
         slot.innerHTML =
             slotType === 'generate'
                 ? getGeneratePreviewMarkup(state.currentResult, meta)
-                : getResultMarkup(state.currentResult, meta);
+                : slotType === 'history'
+                  ? getHistoryPreviewMarkup(state.currentResult, meta)
+                  : getResultMarkup(state.currentResult, meta);
     });
 
     renderDashboard();
+    renderHistory();
     syncPublishConfirmation();
     renderGenerateFeedback();
     renderGeneratorPhotoTip();
@@ -1982,31 +2059,53 @@ const renderHistory = () => {
         elements.historyList.innerHTML =
             '<div class="empty-state">Nenhuma geração salva para este usuário ainda.</div>';
     } else {
+        const selectedHistoryId = state.currentHistoryMeta?.historyId || '';
+        const totalPages = Math.max(1, Math.ceil((state.history.total || 0) / state.history.limit));
+
         elements.historyList.innerHTML = state.history.entries
             .map((entry) => {
-                const preview = entry.response.caption.slice(0, 140).trim();
+                const normalizedResult = normalizeResultShape(entry.response);
+                const preview = String(normalizedResult?.caption || '').trim();
+                const productName = getHistoryProductName(entry);
+                const publishedNetworks = getHistoryPublishedNetworks(entry);
+                const publishBadges = publishedNetworks.length
+                    ? publishedNetworks
+                          .map((network) =>
+                              network === 'instagram'
+                                  ? '<span class="history-network-badge is-instagram">Instagram</span>'
+                                  : '<span class="history-network-badge is-facebook">Facebook</span>'
+                          )
+                          .join('')
+                    : '<span class="history-network-badge is-muted">Não publicado</span>';
+                const isActive = entry.id === selectedHistoryId;
 
                 return `
-                    <article class="history-item">
-                        <div class="result-meta">
-                            <span class="badge badge-muted">${escapeHtml(formatDateTime(entry.createdAt))}</span>
-                            <span class="badge badge-muted">${escapeHtml(entry.response.generationMode)}</span>
-                            <span class="badge badge-muted">${escapeHtml(entry.response.source)}</span>
+                    <article class="history-item ${isActive ? 'is-active' : ''}">
+                        <div class="history-item-top">
+                            <h3 class="history-item-product">${escapeHtml(productName)}</h3>
+                            <span class="history-item-date">${escapeHtml(formatHistoryRelativeDate(entry.createdAt))}</span>
                         </div>
-                        <h3>${escapeHtml(entry.response.title)}</h3>
-                        <p>${escapeHtml(preview)}${entry.response.caption.length > 140 ? '…' : ''}</p>
-                        <div class="history-item-actions">
-                            <button class="button button-ghost" type="button" data-history-open="${escapeHtml(entry.id)}">
-                                Abrir de novo
+                        <p class="history-item-preview">${escapeHtml(preview)}</p>
+                        <div class="history-item-footer">
+                            <div class="history-network-badges">
+                                ${publishBadges}
+                            </div>
+                            <button class="button button-ghost history-open-button" type="button" data-history-open="${escapeHtml(entry.id)}">
+                                ↗ Abrir de novo
                             </button>
                         </div>
                     </article>
                 `;
             })
             .join('');
+
+        elements.historyPaginationLabel.textContent = `Página ${state.history.page} de ${totalPages}`;
     }
 
-    elements.historyPaginationLabel.textContent = `Página ${state.history.page} • ${state.history.total} itens`;
+    if (state.history.entries.length === 0) {
+        const totalPages = Math.max(1, Math.ceil((state.history.total || 0) / state.history.limit));
+        elements.historyPaginationLabel.textContent = `Página ${state.history.page} de ${totalPages}`;
+    }
     elements.historyPrevButton.disabled = state.history.page <= 1;
     elements.historyNextButton.disabled = !state.history.hasNextPage;
     renderDashboard();
